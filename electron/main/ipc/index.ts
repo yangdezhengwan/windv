@@ -12,7 +12,9 @@ import { ShortcutManager } from '../modules/ShortcutManager'
 import { OrderConfigManager } from '../modules/OrderConfigManager'
 import { HighFrequencyDetector } from '../modules/HighFrequencyDetector'
 import { LLMConfigManager } from '../modules/LLMConfigManager'
+import { LoopMessageManager } from '../modules/LoopMessageManager'
 import { PROVIDER_INFO } from '../ai/providers/LLMManager'
+import { LocalModelManager } from '../ai/providers/LocalModelManager'
 import { LiveAIService } from '../ai/LiveAIService'
 
 /**
@@ -680,6 +682,236 @@ export function setupIpcHandlers(platformManager: PlatformManager): void {
       return await aiService.generateOrderAnnouncement(nickname, amount, level)
     } catch (error) {
       log.error('llm:generate-order-announcement error:', error)
+      throw error
+    }
+  })
+
+  // ===== 本地模型管理 (V2.2) =====
+  ipcMain.handle('local-model:get-status', async () => {
+    try {
+      const manager = LocalModelManager.getInstance()
+      return await manager.getOllamaStatus()
+    } catch (error) {
+      log.error('local-model:get-status error:', error)
+      return { installed: false, running: false, models: [] }
+    }
+  })
+
+  ipcMain.handle('local-model:get-recommended', async () => {
+    try {
+      const manager = LocalModelManager.getInstance()
+      return manager.getRecommendedModels()
+    } catch (error) {
+      log.error('local-model:get-recommended error:', error)
+      return []
+    }
+  })
+
+  ipcMain.handle('local-model:pull', async (event, { modelId }) => {
+    try {
+      const manager = LocalModelManager.getInstance()
+      
+      // 发送进度更新
+      const sendProgress = (progress: number, status: string) => {
+        event.sender.send('local-model:progress', { modelId, progress, status })
+      }
+      
+      return await manager.pullModel(modelId, sendProgress)
+    } catch (error) {
+      log.error('local-model:pull error:', error)
+      return { success: false, error: String(error) }
+    }
+  })
+
+  ipcMain.handle('local-model:delete', async (_, { modelId }) => {
+    try {
+      const manager = LocalModelManager.getInstance()
+      return await manager.deleteModel(modelId)
+    } catch (error) {
+      log.error('local-model:delete error:', error)
+      return { success: false, error: String(error) }
+    }
+  })
+
+  ipcMain.handle('local-model:chat', async (_, { modelId, messages, options }) => {
+    try {
+      const manager = LocalModelManager.getInstance()
+      return await manager.chat(modelId, messages, options)
+    } catch (error) {
+      log.error('local-model:chat error:', error)
+      return { content: '', error: String(error) }
+    }
+  })
+
+  ipcMain.handle('local-model:get-guide', async () => {
+    try {
+      const manager = LocalModelManager.getInstance()
+      return manager.getInstallGuide()
+    } catch (error) {
+      log.error('local-model:get-guide error:', error)
+      return { windows: '', macos: '', linux: '' }
+    }
+  })
+
+  ipcMain.handle('local-model:has-available', async () => {
+    try {
+      const manager = LocalModelManager.getInstance()
+      return await manager.hasAvailableLocalModel()
+    } catch {
+      return false
+    }
+  })
+
+  // ===== 循环字幕管理 (V2.2) =====
+  ipcMain.handle('loop:get-config', async () => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return manager.getConfig()
+    } catch (error) {
+      log.error('loop:get-config error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('loop:update-config', async (_, { config }) => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      manager.updateConfig(config)
+      return { success: true }
+    } catch (error) {
+      log.error('loop:update-config error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('loop:set-enabled', async (_, { enabled }) => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      manager.setEnabled(enabled)
+      return { success: true }
+    } catch (error) {
+      log.error('loop:set-enabled error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('loop:get-messages', async () => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return manager.getMessages()
+    } catch (error) {
+      log.error('loop:get-messages error:', error)
+      return []
+    }
+  })
+
+  ipcMain.handle('loop:add-message', async (_, { message }) => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return manager.addMessage(message)
+    } catch (error) {
+      log.error('loop:add-message error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('loop:update-message', async (_, { id, updates }) => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return { success: manager.updateMessage(id, updates) }
+    } catch (error) {
+      log.error('loop:update-message error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('loop:delete-message', async (_, { id }) => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return { success: manager.deleteMessage(id) }
+    } catch (error) {
+      log.error('loop:delete-message error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('loop:get-next', async () => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return manager.getNextMessage()
+    } catch (error) {
+      log.error('loop:get-next error:', error)
+      return null
+    }
+  })
+
+  ipcMain.handle('loop:get-schedules', async () => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return manager.getSchedules()
+    } catch (error) {
+      log.error('loop:get-schedules error:', error)
+      return []
+    }
+  })
+
+  ipcMain.handle('loop:add-schedule', async (_, { schedule }) => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return manager.addSchedule(schedule)
+    } catch (error) {
+      log.error('loop:add-schedule error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('loop:update-schedule', async (_, { id, updates }) => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return { success: manager.updateSchedule(id, updates) }
+    } catch (error) {
+      log.error('loop:update-schedule error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('loop:delete-schedule', async (_, { id }) => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return { success: manager.deleteSchedule(id) }
+    } catch (error) {
+      log.error('loop:delete-schedule error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('loop:export', async () => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return manager.exportMessages()
+    } catch (error) {
+      log.error('loop:export error:', error)
+      return ''
+    }
+  })
+
+  ipcMain.handle('loop:import', async (_, { json }) => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      return manager.importFromJson(json)
+    } catch (error) {
+      log.error('loop:import error:', error)
+      return { success: 0, failed: 1 }
+    }
+  })
+
+  ipcMain.handle('loop:reset', async () => {
+    try {
+      const manager = LoopMessageManager.getInstance()
+      manager.resetToDefault()
+      return { success: true }
+    } catch (error) {
+      log.error('loop:reset error:', error)
       throw error
     }
   })

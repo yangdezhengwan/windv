@@ -104,6 +104,36 @@ export interface WindVAPI {
     generateOrderAnnouncement: (nickname: string, amount: number, level: string) => Promise<string>
   }
   
+  // 本地模型 (V2.2)
+  localModel: {
+    getStatus: () => Promise<{ installed: boolean; running: boolean; version?: string; models: string[] }>
+    getRecommended: () => Promise<any[]>
+    pull: (modelId: string) => Promise<{ success: boolean; error?: string }>
+    delete: (modelId: string) => Promise<{ success: boolean; error?: string }>
+    chat: (modelId: string, messages: any[], options?: any) => Promise<{ content: string; error?: string }>
+    getGuide: () => Promise<{ windows: string; macos: string; linux: string }>
+    hasAvailable: () => Promise<boolean>
+  }
+  
+  // 循环字幕 (V2.2)
+  loop: {
+    getConfig: () => Promise<any>
+    updateConfig: (config: any) => Promise<any>
+    setEnabled: (enabled: boolean) => Promise<any>
+    getMessages: () => Promise<any[]>
+    addMessage: (message: any) => Promise<any>
+    updateMessage: (id: string, updates: any) => Promise<any>
+    deleteMessage: (id: string) => Promise<any>
+    getNext: () => Promise<any>
+    getSchedules: () => Promise<any[]>
+    addSchedule: (schedule: any) => Promise<any>
+    updateSchedule: (id: string, updates: any) => Promise<any>
+    deleteSchedule: (id: string) => Promise<any>
+    export: () => Promise<string>
+    import: (json: string) => Promise<{ success: number; failed: number }>
+    reset: () => Promise<any>
+  }
+  
   // Event listeners
   on: (channel: string, callback: (...args: any[]) => void) => void
   off: (channel: string, callback: (...args: any[]) => void) => void
@@ -122,7 +152,8 @@ const validReceiveChannels = [
   'tray:pause-all',
   'shortcut:triggered',
   'notification:error',
-  'notification:showDetails'
+  'notification:showDetails',
+  'local-model:progress'
 ]
 
 // Create API object
@@ -214,6 +245,34 @@ const windvAPI: WindVAPI = {
     aiLearning: (questions) => ipcRenderer.invoke('llm:ai-learning', { questions }),
     setContext: (context) => ipcRenderer.invoke('llm:set-context', { context }),
     generateOrderAnnouncement: (nickname, amount, level) => ipcRenderer.invoke('llm:generate-order-announcement', { nickname, amount, level })
+  },
+  
+  localModel: {
+    getStatus: () => ipcRenderer.invoke('local-model:get-status'),
+    getRecommended: () => ipcRenderer.invoke('local-model:get-recommended'),
+    pull: (modelId) => ipcRenderer.invoke('local-model:pull', { modelId }),
+    delete: (modelId) => ipcRenderer.invoke('local-model:delete', { modelId }),
+    chat: (modelId, messages, options) => ipcRenderer.invoke('local-model:chat', { modelId, messages, options }),
+    getGuide: () => ipcRenderer.invoke('local-model:get-guide'),
+    hasAvailable: () => ipcRenderer.invoke('local-model:has-available')
+  },
+  
+  loop: {
+    getConfig: () => ipcRenderer.invoke('loop:get-config'),
+    updateConfig: (config) => ipcRenderer.invoke('loop:update-config', { config }),
+    setEnabled: (enabled) => ipcRenderer.invoke('loop:set-enabled', { enabled }),
+    getMessages: () => ipcRenderer.invoke('loop:get-messages'),
+    addMessage: (message) => ipcRenderer.invoke('loop:add-message', { message }),
+    updateMessage: (id, updates) => ipcRenderer.invoke('loop:update-message', { id, updates }),
+    deleteMessage: (id) => ipcRenderer.invoke('loop:delete-message', { id }),
+    getNext: () => ipcRenderer.invoke('loop:get-next'),
+    getSchedules: () => ipcRenderer.invoke('loop:get-schedules'),
+    addSchedule: (schedule) => ipcRenderer.invoke('loop:add-schedule', { schedule }),
+    updateSchedule: (id, updates) => ipcRenderer.invoke('loop:update-schedule', { id, updates }),
+    deleteSchedule: (id) => ipcRenderer.invoke('loop:delete-schedule', { id }),
+    export: () => ipcRenderer.invoke('loop:export'),
+    import: (json) => ipcRenderer.invoke('loop:import', { json }),
+    reset: () => ipcRenderer.invoke('loop:reset')
   },
   
   on: (channel, callback) => {
