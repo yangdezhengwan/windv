@@ -1,0 +1,46 @@
+appId: com.windv.liveassistant
+productName: 无人直播助手
+copyright: Copyright © 2026
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - "!**/*.map"
+  - "!**/node_modules/.cache"
+
+extraMetadata:
+  main: dist-electron/main/index.js
+
+asar: true
+compression: maximum
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: resources/icon.ico
+  artifactName: "${productName}-${version}-Setup.${ext}"
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 无人直播助手
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+  installerHeaderIcon: resources/icon.ico
+  license: ""
+  welcomeImage: ""
+  installerColumns: 80
+
+publish: null
+
+electronDownload:
+  mirror: https://npmmirror.com/mirrors/electron/

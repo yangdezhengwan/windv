@@ -1,0 +1,416 @@
+import { BrowserWindow, webContents } from 'electron'
+import { join } from 'path'
+import log from 'electron-log'
+import { v4 as uuidv4 } from 'uuid'
+import { getDatabase } from '../database'
+import { TaobaoAdapter } from '../platform/adapters/TaobaoAdapter'
+import { PinduoduoAdapter } from '../platform/adapters/PinduoduoAdapter'
+import { DouyinAdapter } from '../platform/adapters/DouyinAdapter'
+import { VideoWeAdapter } from '../platform/adapters/VideoWeAdapter'
+import { IPlatformAdapter, PlatformCode, Danmaku, OrderInfo } from '../platform/IPlatformAdapter'
+import { ScriptMatcher } from '../ai/ScriptMatcher'
+import { IntentClassifier, IntentType } from '../ai/IntentClassifier'
+import { RiskController } from './RiskController'
+import { StatisticsCollector } from './StatisticsCollector'
+
+interface ActiveRoom {
+  id: string
+  adapter: IPlatformAdapter
+  status: 'monitoring' | 'paused' | 'error'
+  config: any
+}
+
+// Use RoomInfo from IPlatformAdapter
+import type { RoomInfo } from '../platform/IPlatformAdapter'
+
+// Database row type for room table
+interface RoomRow {
+  id: string
+  platform_code: string
+  name: string
+  url: string
+  window_title: string
+  process_name: string
+  config: string
+  status: string
+}
+
+export class PlatformManager {
+  private static instance: PlatformManager
+  private activeRooms: Map<string, ActiveRoom> = new Map()
+  private adapters: Map<PlatformCode, IPlatformAdapter> = new Map()
+  private scriptMatcher: ScriptMatcher
+  private intentClassifier: IntentClassifier
+  private riskController: RiskController
+  private statsCollector: StatisticsCollector
+  private mainWindow: BrowserWindow | null = null
+
+  constructor() {
+    // 注册平台适配器
+    this.registerAdapters()
+    
+    // 初始化 AI 引擎
+    this.scriptMatcher = new ScriptMatcher()
+    this.intentClassifier = new IntentClassifier()
+    this.riskController = new RiskController()
+    this.statsCollector = StatisticsCollector.getInstance()
+
+    log.info('PlatformManager 初始化完成')
+  }
+
+  public static getInstance(): PlatformManager {
+    if (!PlatformManager.instance) {
+      PlatformManager.instance = new PlatformManager()
+    }
+    return PlatformManager.instance
+  }
+
+  public setMainWindow(window: BrowserWindow): void {
+    this.mainWindow = window
+  }
+
+  /**
+   * 注册平台适配器
+   */
+  private registerAdapters(): void {
+    // 已完成平台
+    this.adapters.set(PlatformCode.TAOBAO, new TaobaoAdapter())
+    this.adapters.set(PlatformCode.PINDUODUO, new PinduoduoAdapter())
+    
+    // V2.0 新增平台
+    this.adapters.set(PlatformCode.DOUYIN, new DouyinAdapter())
+    this.adapters.set(PlatformCode.VIDEO_WEE, new VideoWeAdapter())
+    
+    log.info(`已注册 ${this.adapters.size} 个平台适配器`)
+  }
+
+  /**
+   * 获取平台适配器
+   */
+  getAdapter(platform: PlatformCode): IPlatformAdapter | undefined {
+    return this.adapters.get(platform)
+  }
+
+  /**
+   * 启动房间监控
+   */
+  async startMonitoring(roomId: string): Promise<void> {
+    log.info(`启动房间监控: ${roomId}`)
+
+    // 获取房间信息
+    const db = getDatabase()
+    const room = db.prepare('SELECT * FROM room WHERE id = ? AND is_active = 1').get(roomId) as RoomRow | undefined
+
+    if (!room) {
+      throw new Error(`房间不存在: ${roomId}`)
+    }
+
+    // 获取适配器
+    const platformCode = room.platform_code as PlatformCode
+    const adapter = this.adapters.get(platformCode)
+
+    if (!adapter) {
+      throw new Error(`不支持的平台: ${platformCode}`)
+    }
+
+    // 创建适配器实例
+    const adapterInstance = this.createAdapterInstance(platformCode)
+
+    // 配置回调
+    adapterInstance.onDanmaku((danmaku: Danmaku) => {
+      this.handleDanmaku(roomId, danmaku)
+    })
+
+    adapterInstance.onOrder((order: OrderInfo) => {
+      this.handleOrder(roomId, order)
+    })
+
+    // 连接直播间
+    await adapterInstance.connect({
+      id: room.id,
+      url: room.url,
+      windowTitle: room.window_title,
+      processName: room.process_name,
+      config: JSON.parse(room.config || '{}')
+    })
+
+    // 保存活跃房间
+    this.activeRooms.set(roomId, {
+      id: roomId,
+      adapter: adapterInstance,
+      status: 'monitoring',
+      config: JSON.parse(room.config || '{}')
+    })
+
+    // 更新数据库状态
+    db.prepare("UPDATE room SET status = 'monitoring', last_seen_at = datetime('now') WHERE id = ?").run(roomId)
+
+    // 通知渲染进程
+    this.sendToRenderer('room:status-change', { roomId, status: 'monitoring' })
+
+    log.info(`房间监控已启动: ${room.name}`)
+  }
+
+  /**
+   * 停止房间监控
+   */
+  async stopMonitoring(roomId: string): Promise<void> {
+    log.info(`停止房间监控: ${roomId}`)
+
+    const activeRoom = this.activeRooms.get(roomId)
+    if (activeRoom) {
+      await activeRoom.adapter.disconnect()
+      this.activeRooms.delete(roomId)
+
+      // 更新数据库状态
+      const db = getDatabase()
+      db.prepare("UPDATE room SET status = 'offline' WHERE id = ?").run(roomId)
+
+      // 通知渲染进程
+      this.sendToRenderer('room:status-change', { roomId, status: 'offline' })
+
+      log.info(`房间监控已停止: ${roomId}`)
+    }
+  }
+
+  /**
+   * 暂停/恢复房间监控
+   */
+  async pauseMonitoring(roomId: string, paused: boolean): Promise<void> {
+    const activeRoom = this.activeRooms.get(roomId)
+    if (activeRoom) {
+      activeRoom.status = paused ? 'paused' : 'monitoring'
+      
+      const db = getDatabase()
+      db.prepare("UPDATE room SET status = ? WHERE id = ?").run(paused ? 'paused' : 'monitoring', roomId)
+      
+      this.sendToRenderer('room:status-change', { roomId, status: activeRoom.status })
+    }
+  }
+
+  /**
+   * 处理弹幕
+   */
+  private async handleDanmaku(roomId: string, danmaku: Danmaku): Promise<void> {
+    try {
+      // 检查风控
+      if (this.riskController.checkRateLimit(roomId)) {
+        log.warn(`房间 ${roomId} 触发频率限制，跳过回复`)
+        return
+      }
+
+      // 记录统计
+      this.statsCollector.recordDanmaku(roomId, IntentType.UNKNOWN)
+
+      // 记录日志
+      const db = getDatabase()
+      const logId = uuidv4()
+      db.prepare(`
+        INSERT INTO danmaku_log (id, room_id, content, sender_id, sender_nickname, created_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+      `).run(logId, roomId, danmaku.content, danmaku.senderId, danmaku.senderNickname)
+
+      // 意图分类
+      const intentResult = this.intentClassifier.classify(danmaku.content)
+      
+      // 更新日志意图
+      db.prepare('UPDATE danmaku_log SET intent_type = ? WHERE id = ?').run(intentResult.type, logId)
+
+      // 检查违禁词
+      if (this.riskController.isSensitive(danmaku.content)) {
+        db.prepare('UPDATE danmaku_log SET is_blocked = 1, block_reason = ? WHERE id = ?')
+          .run('sensitive_word', logId)
+        return
+      }
+
+      // 匹配话术
+      const matchResult = await this.scriptMatcher.match(intentResult.type, danmaku.content, roomId)
+
+      if (matchResult) {
+        // 真人模拟延迟
+        const delay = this.riskController.getHumanDelay()
+        await this.sleep(delay)
+
+        // 发送回复
+        const activeRoom = this.activeRooms.get(roomId)
+        if (activeRoom && activeRoom.status === 'monitoring') {
+          await activeRoom.adapter.sendDanmaku(matchResult.response)
+          
+          // 更新日志
+          db.prepare(`
+            UPDATE danmaku_log 
+            SET response_sent = 1, response_content = ?, matched_script_id = ?
+            WHERE id = ?
+          `).run(matchResult.response, matchResult.scriptId, logId)
+
+          // 记录回复统计
+          this.statsCollector.recordReply(roomId, true)
+        }
+      } else {
+        // 未匹配到话术
+        this.statsCollector.recordReply(roomId, false)
+      }
+
+      // 通知渲染进程
+      this.sendToRenderer('danmaku:new', {
+        id: logId,
+        roomId,
+        content: danmaku.content,
+        senderNickname: danmaku.senderNickname,
+        intentType: intentResult.type,
+        responseSent: matchResult ? true : false
+      })
+
+    } catch (error) {
+      log.error(`处理弹幕失败: ${error}`)
+    }
+  }
+
+  /**
+   * 处理订单
+   */
+  private async handleOrder(roomId: string, order: OrderInfo): Promise<void> {
+    try {
+      log.info(`收到订单: ${order.orderNo}, 金额: ${order.amount}`)
+
+      // 记录订单
+      const db = getDatabase()
+      const orderId = uuidv4()
+      db.prepare(`
+        INSERT INTO order_log (id, room_id, order_no, amount, status, nickname_masked, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+      `).run(orderId, roomId, order.orderNo, order.amount, order.status, order.nicknameMasked)
+
+      // 记录统计
+      this.statsCollector.recordOrder(roomId, order.amount, order.status)
+
+      // 发送播报
+      const activeRoom = this.activeRooms.get(roomId)
+      if (activeRoom && activeRoom.status === 'monitoring') {
+        const announceText = this.generateAnnounceText(order)
+        
+        // 大额订单多次播报
+        const announceCount = order.amount > (activeRoom.config.largeOrderThreshold || 500) ? 3 : 1
+        
+        for (let i = 0; i < announceCount; i++) {
+          await this.sleep(i * 2000 + Math.random() * 1000)
+          await activeRoom.adapter.sendDanmaku(announceText)
+        }
+
+        // 更新播报次数
+        db.prepare(`
+          UPDATE order_log SET announce_count = ?, last_announced_at = datetime('now') WHERE id = ?
+        `).run(announceCount, orderId)
+      }
+
+      // 通知渲染进程
+      this.sendToRenderer('order:new', {
+        id: orderId,
+        roomId,
+        orderNo: order.orderNo,
+        amount: order.amount,
+        status: order.status,
+        nicknameMasked: order.nicknameMasked
+      })
+
+    } catch (error) {
+      log.error(`处理订单失败: ${error}`)
+    }
+  }
+
+  /**
+   * 生成播报文案
+   */
+  private generateAnnounceText(order: OrderInfo): string {
+    const templates = {
+      new: ['🎉 恭喜 {nickname} 抢到同款！', '✨ {nickname} 已下单，坐等收货~'],
+      paid: ['💰 {nickname} 已付款锁定！现货秒发！', '✅ {nickname} 付款成功，感谢信任！'],
+      large_order: [
+        `🔥🔥🔥 大单来袭！{nickname} 豪气下单 ${order.amount} 元！`,
+        `💎 尊贵会员 {nickname} 喜提大单，感谢支持！`
+      ]
+    }
+
+    let pool: string[]
+    if (order.amount > 500) {
+      pool = templates.large_order
+    } else if (order.status === 'paid') {
+      pool = templates.paid
+    } else {
+      pool = templates.new
+    }
+
+    const template = pool[Math.floor(Math.random() * pool.length)]
+    return template.replace('{nickname}', order.nicknameMasked)
+  }
+
+  /**
+   * 创建适配器实例
+   */
+  private createAdapterInstance(platform: PlatformCode): IPlatformAdapter {
+    switch (platform) {
+      case PlatformCode.TAOBAO:
+        return new TaobaoAdapter()
+      case PlatformCode.PINDUODUO:
+        return new PinduoduoAdapter()
+      case PlatformCode.DOUYIN:
+        return new DouyinAdapter()
+      case PlatformCode.VIDEO_WEE:
+        return new VideoWeAdapter()
+      default:
+        throw new Error(`不支持的平台: ${platform}`)
+    }
+  }
+
+  /**
+   * 获取所有活跃房间
+   */
+  getActiveRooms(): { id: string; name: string; status: string; platform: string }[] {
+    const db = getDatabase()
+    const rooms: { id: string; name: string; status: string; platform: string }[] = []
+
+    for (const [roomId, activeRoom] of this.activeRooms) {
+      const room = db.prepare('SELECT name, platform_code FROM room WHERE id = ?').get(roomId) as any
+      if (room) {
+        rooms.push({
+          id: roomId,
+          name: room.name,
+          status: activeRoom.status,
+          platform: room.platform_code
+        })
+      }
+    }
+
+    return rooms
+  }
+
+  /**
+   * 发送消息到渲染进程
+   */
+  private sendToRenderer(channel: string, data: any): void {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send(channel, data)
+    }
+  }
+
+  /**
+   * 关闭所有房间监控
+   */
+  async disposeAll(): Promise<void> {
+    log.info('关闭所有房间监控...')
+
+    for (const [roomId] of this.activeRooms) {
+      await this.stopMonitoring(roomId)
+    }
+
+    this.activeRooms.clear()
+    log.info('所有房间监控已关闭')
+  }
+
+  /**
+   * 休眠工具函数
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+}
