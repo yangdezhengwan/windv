@@ -251,6 +251,39 @@ export class PinduoduoAdapter extends BasePlatformAdapter {
   }
 
   /**
+   * 发送点赞
+   */
+  async sendLike(): Promise<void> {
+    if (!this.page) {
+      throw new Error('页面未连接')
+    }
+
+    log.info('[拼多多] 发送点赞')
+
+    try {
+      await this.page.evaluate(() => {
+        const selectors = [
+          '.like-btn',
+          '[class*="like"]',
+          '[class*="heart"]',
+          '[class*="good"]'
+        ]
+        
+        for (const selector of selectors) {
+          const btn = document.querySelector(selector)
+          if (btn instanceof HTMLElement) {
+            btn.click()
+            return true
+          }
+        }
+        return false
+      })
+    } catch (error) {
+      log.error('[拼多多] 发送点赞失败:', error)
+    }
+  }
+
+  /**
    * 检测风控状态
    */
   async checkRiskStatus(): Promise<RiskStatus> {

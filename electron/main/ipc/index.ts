@@ -14,6 +14,7 @@ import { TTSManager } from '../modules/TTSManager'
 import { HighFrequencyDetector } from '../modules/HighFrequencyDetector'
 import { LLMConfigManager } from '../modules/LLMConfigManager'
 import { LoopMessageManager } from '../modules/LoopMessageManager'
+import { PopularityManager } from '../modules/PopularityManager'
 import { PROVIDER_INFO } from '../ai/providers/LLMManager'
 import { LocalModelManager } from '../ai/providers/LocalModelManager'
 import { LiveAIService } from '../ai/LiveAIService'
@@ -598,6 +599,82 @@ export function setupIpcHandlers(platformManager: PlatformManager): void {
     } catch (error) {
       log.error('hfq:reset error:', error)
       throw error
+    }
+  })
+
+  // ===== 人气辅助管理 (V3) =====
+  ipcMain.handle('popularity:get-config', async () => {
+    try {
+      const manager = PopularityManager.getInstance()
+      return manager.getConfig()
+    } catch (error) {
+      log.error('popularity:get-config error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('popularity:update-config', async (_, { updates }) => {
+    try {
+      const manager = PopularityManager.getInstance()
+      manager.updateConfig(updates)
+      return { success: true }
+    } catch (error) {
+      log.error('popularity:update-config error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('popularity:set-enabled', async (_, { enabled }) => {
+    try {
+      const manager = PopularityManager.getInstance()
+      manager.setEnabled(enabled)
+      return { success: true }
+    } catch (error) {
+      log.error('popularity:set-enabled error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('popularity:add-danmaku', async (_, { content, weight }) => {
+    try {
+      const manager = PopularityManager.getInstance()
+      manager.addDanmaku(content, weight)
+      return { success: true }
+    } catch (error) {
+      log.error('popularity:add-danmaku error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('popularity:remove-danmaku', async (_, { id }) => {
+    try {
+      const manager = PopularityManager.getInstance()
+      manager.removeDanmaku(id)
+      return { success: true }
+    } catch (error) {
+      log.error('popularity:remove-danmaku error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('popularity:update-danmaku', async (_, { id, updates }) => {
+    try {
+      const manager = PopularityManager.getInstance()
+      manager.updateDanmaku(id, updates)
+      return { success: true }
+    } catch (error) {
+      log.error('popularity:update-danmaku error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('popularity:get-stats', async () => {
+    try {
+      const manager = PopularityManager.getInstance()
+      return manager.getStats()
+    } catch (error) {
+      log.error('popularity:get-stats error:', error)
+      return { sentToday: 0, dailyLimit: 100, activeRooms: 0, enabled: false }
     }
   })
 

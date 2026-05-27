@@ -135,6 +135,11 @@ export interface IPlatformAdapter {
   sendDanmaku(content: string): Promise<void>
 
   /**
+   * 发送点赞
+   */
+  sendLike(): Promise<void>
+
+  /**
    * 检测风控状态
    */
   checkRiskStatus(): Promise<RiskStatus>
@@ -174,6 +179,7 @@ export abstract class BasePlatformAdapter implements IPlatformAdapter {
   abstract connect(roomInfo: RoomInfo): Promise<void>
   abstract disconnect(): Promise<void>
   abstract sendDanmaku(content: string): Promise<void>
+  abstract sendLike(): Promise<void>
   abstract checkRiskStatus(): Promise<RiskStatus>
   abstract getRoomInfo(): Promise<RoomInfo>
 

@@ -241,6 +241,43 @@ export class TaobaoAdapter extends BasePlatformAdapter {
   }
 
   /**
+   * 发送点赞
+   */
+  async sendLike(): Promise<void> {
+    if (!this.page) {
+      throw new Error('页面未连接')
+    }
+
+    log.info('[淘宝] 发送点赞')
+
+    try {
+      // 淘宝直播间点赞 - 点击点赞按钮
+      await this.page.evaluate(() => {
+        // 尝试多种选择器
+        const selectors = [
+          '.like-btn',
+          '[class*="like"]',
+          '[class*="heart"]',
+          '[class*="praise"]',
+          'button[data-type="like"]'
+        ]
+        
+        for (const selector of selectors) {
+          const btn = document.querySelector(selector)
+          if (btn instanceof HTMLElement) {
+            btn.click()
+            return true
+          }
+        }
+        return false
+      })
+    } catch (error) {
+      log.error('[淘宝] 发送点赞失败:', error)
+      // 点赞失败不抛出异常，只是静默失败
+    }
+  }
+
+  /**
    * 检测风控状态
    */
   async checkRiskStatus(): Promise<RiskStatus> {

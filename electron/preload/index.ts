@@ -97,6 +97,17 @@ export interface WindVAPI {
     reset: () => Promise<any>
   }
   
+  // 人气辅助
+  popularity: {
+    getConfig: () => Promise<any>
+    updateConfig: (updates: any) => Promise<any>
+    setEnabled: (enabled: boolean) => Promise<any>
+    addDanmaku: (content: string, weight?: number) => Promise<any>
+    removeDanmaku: (id: string) => Promise<any>
+    updateDanmaku: (id: string, updates: any) => Promise<any>
+    getStats: () => Promise<any>
+  }
+  
   // 订单配置
   order: {
     getConfig: () => Promise<any>
@@ -288,6 +299,17 @@ const windvAPI: WindVAPI = {
   hfq: {
     getQuestions: () => ipcRenderer.invoke('hfq:get-questions'),
     reset: () => ipcRenderer.invoke('hfq:reset')
+  },
+  
+  // 人气辅助
+  popularity: {
+    getConfig: () => ipcRenderer.invoke('popularity:get-config'),
+    updateConfig: (updates: any) => ipcRenderer.invoke('popularity:update-config', { updates }),
+    setEnabled: (enabled: boolean) => ipcRenderer.invoke('popularity:set-enabled', { enabled }),
+    addDanmaku: (content: string, weight?: number) => ipcRenderer.invoke('popularity:add-danmaku', { content, weight }),
+    removeDanmaku: (id: string) => ipcRenderer.invoke('popularity:remove-danmaku', { id }),
+    updateDanmaku: (id: string, updates: any) => ipcRenderer.invoke('popularity:update-danmaku', { id, updates }),
+    getStats: () => ipcRenderer.invoke('popularity:get-stats')
   },
   
   order: {

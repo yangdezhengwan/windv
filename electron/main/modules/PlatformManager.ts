@@ -14,6 +14,7 @@ import { RiskController } from './RiskController'
 import { StatisticsCollector } from './StatisticsCollector'
 import { HighFrequencyDetector } from './HighFrequencyDetector'
 import { OrderConfigManager } from './OrderConfigManager'
+import { PopularityManager } from './PopularityManager'
 
 interface ActiveRoom {
   id: string
@@ -47,6 +48,7 @@ export class PlatformManager {
   private statsCollector: StatisticsCollector
   private highFrequencyDetector: HighFrequencyDetector
   private orderConfigManager: OrderConfigManager
+  private popularityManager: PopularityManager
   private mainWindow: BrowserWindow | null = null
 
   constructor() {
@@ -60,6 +62,11 @@ export class PlatformManager {
     this.statsCollector = StatisticsCollector.getInstance()
     this.highFrequencyDetector = HighFrequencyDetector.getInstance()
     this.orderConfigManager = OrderConfigManager.getInstance()
+    this.popularityManager = PopularityManager.getInstance()
+
+    // 设置人气辅助的回调
+    this.popularityManager.setDanmakuCallback(this.sendVirtualDanmaku.bind(this))
+    this.popularityManager.setLikeCallback(this.sendVirtualLike.bind(this))
 
     // 监听高频问题事件
     this.highFrequencyDetector.on('high_frequency', (data: { content: string; count: number; roomId: string }) => {
@@ -157,6 +164,9 @@ export class PlatformManager {
     // 更新数据库状态
     db.prepare("UPDATE room SET status = 'monitoring', last_seen_at = datetime('now') WHERE id = ?").run(roomId)
 
+    // 启动人气辅助
+    this.popularityManager.startRoom(roomId)
+
     // 通知渲染进程
     this.sendToRenderer('room:status-change', { roomId, status: 'monitoring' })
 
@@ -173,6 +183,9 @@ export class PlatformManager {
     if (activeRoom) {
       await activeRoom.adapter.disconnect()
       this.activeRooms.delete(roomId)
+
+      // 停止人气辅助
+      this.popularityManager.stopRoom(roomId)
 
       // 更新数据库状态
       const db = getDatabase()
@@ -397,6 +410,46 @@ export class PlatformManager {
   private sendToRenderer(channel: string, data: any): void {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send(channel, data)
+    }
+  }
+
+  /**
+   * 发送虚拟弹幕
+   */
+  private async sendVirtualDanmaku(roomId: string, content: string): Promise<void> {
+    const activeRoom = this.activeRooms.get(roomId)
+    if (activeRoom && activeRoom.status === 'monitoring') {
+      try {
+        await activeRoom.adapter.sendDanmaku(content)
+        // 发送事件到渲染进程
+        this.sendToRenderer('danmaku:new', {
+          id: `virtual_${Date.now()}`,
+          roomId,
+          content,
+          senderNickname: '虚拟用户',
+          intentType: 'chat',
+          responseSent: false,
+          isVirtual: true
+        })
+      } catch (error) {
+        log.error(`发送虚拟弹幕失败 [${roomId}]: ${error}`)
+      }
+    }
+  }
+
+  /**
+   * 发送虚拟点赞
+   */
+  private async sendVirtualLike(roomId: string): Promise<void> {
+    const activeRoom = this.activeRooms.get(roomId)
+    if (activeRoom && activeRoom.status === 'monitoring') {
+      try {
+        await activeRoom.adapter.sendLike()
+        // 发送事件到渲染进程
+        this.sendToRenderer('like:new', { roomId, isVirtual: true })
+      } catch (error) {
+        log.error(`发送虚拟点赞失败 [${roomId}]: ${error}`)
+      }
     }
   }
 

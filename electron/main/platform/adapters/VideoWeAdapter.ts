@@ -390,6 +390,29 @@ export class VideoWeAdapter extends BasePlatformAdapter {
   }
 
   /**
+   * 发送点赞
+   */
+  async sendLike(): Promise<void> {
+    if (!this.page) {
+      throw new Error('页面未连接')
+    }
+
+    log.info('[视频号] 发送点赞')
+
+    try {
+      await this.page.evaluate(() => {
+        // 视频号点赞按钮
+        const likeBtn = document.querySelector('.like-btn, [class*="like"], [class*="thumb"]')
+        if (likeBtn instanceof HTMLElement) {
+          likeBtn.click()
+        }
+      })
+    } catch (error) {
+      log.error('[视频号] 发送点赞失败:', error)
+    }
+  }
+
+  /**
    * 检测风控状态
    */
   async checkRiskStatus(): Promise<RiskStatus> {

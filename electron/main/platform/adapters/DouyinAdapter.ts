@@ -331,6 +331,29 @@ export class DouyinAdapter extends BasePlatformAdapter {
   }
 
   /**
+   * 发送点赞
+   */
+  async sendLike(): Promise<void> {
+    if (!this.page) {
+      throw new Error('页面未连接')
+    }
+
+    log.info('[抖音] 发送点赞')
+
+    try {
+      await this.page.evaluate(() => {
+        // 抖音直播点赞按钮
+        const likeBtn = document.querySelector('.like-icon, [class*="like"], [class*="heart"]')
+        if (likeBtn instanceof HTMLElement) {
+          likeBtn.click()
+        }
+      })
+    } catch (error) {
+      log.error('[抖音] 发送点赞失败:', error)
+    }
+  }
+
+  /**
    * 检测风控状态
    */
   async checkRiskStatus(): Promise<RiskStatus> {
