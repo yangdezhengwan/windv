@@ -73,7 +73,7 @@
 
     <!-- 授权表格 -->
     <div class="table-container">
-      <el-table :data="filteredLicenses" v-loading="loading" stripe>
+      <el-table :data="filteredLicenses" v-loading="loading" stripe :row-class-name="() => 'table-row'" :cell-style="{ color: '#ffffff', background: 'rgba(30, 30, 60, 0.4)' }" :header-cell-style="{ color: '#ffffff', background: 'rgba(0, 212, 255, 0.1)' }">
         <el-table-column prop="code" label="授权码" min-width="220">
           <template #default="{ row }">
             <div class="code-cell">
@@ -669,6 +669,7 @@ onMounted(() => {
   width: 150px;
 }
 
+/* 表格容器 */
 .table-container {
   background: rgba(26, 26, 50, 0.8);
   backdrop-filter: blur(20px);
@@ -677,32 +678,38 @@ onMounted(() => {
   padding: 24px;
 }
 
+/* 强制覆盖 Element Plus 表格样式 - 最高优先级 */
 .table-container :deep(.el-table) {
-  --el-table-border-color: rgba(255, 255, 255, 0.1);
-  --el-table-header-bg-color: rgba(0, 212, 255, 0.1);
-  --el-table-tr-bg-color: rgba(30, 30, 60, 0.4);
-  --el-table-row-hover-bg-color: rgba(0, 212, 255, 0.08);
-  --el-table-text-color: #ffffff;
-  --el-table-header-text-color: #ffffff;
-}
-
-.table-container :deep(.el-table tr) {
-  background: rgba(30, 30, 60, 0.4);
-}
-
-.table-container :deep(.el-table tr:hover) {
-  background: rgba(0, 212, 255, 0.05);
+  background: transparent !important;
+  color: #ffffff !important;
+  --el-table-bg-color: transparent !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-header-bg-color: rgba(0, 212, 255, 0.1) !important;
+  --el-table-row-hover-bg-color: rgba(0, 212, 255, 0.05) !important;
+  --el-table-border-color: rgba(255, 255, 255, 0.1) !important;
+  --el-table-text-color: #ffffff !important;
+  --el-table-header-text-color: #ffffff !important;
 }
 
 .table-container :deep(.el-table th.el-table__cell) {
-  background: rgba(0, 212, 255, 0.08);
-  color: #ffffff;
-  font-weight: 600;
+  background: rgba(0, 212, 255, 0.1) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
 }
 
 .table-container :deep(.el-table td.el-table__cell) {
-  color: #ffffff;
-  background: rgba(30, 30, 60, 0.3);
+  background: rgba(30, 30, 60, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.table-container :deep(.el-table tr) {
+  background: rgba(30, 30, 60, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.table-container :deep(.el-table tr:hover > td) {
+  background: rgba(0, 212, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 
 .code-cell {
