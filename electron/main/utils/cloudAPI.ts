@@ -66,9 +66,7 @@ class CloudAPIClient {
         if (error.response?.status === 401) {
           // Token 过期，清除本地 Token
           this.token = null
-          getSettings('cloudToken').then(() => {
-            // 可以在这里触发重新登录事件
-          })
+         
         }
         return Promise.reject(error.response?.data || error.message)
       }
@@ -102,13 +100,14 @@ class CloudAPIClient {
   /**
    * 用户登录
    */
-  async login(username: string, password: string): Promise<{ token: string; user: any }> {
-    const response = await this.client!.post('/auth/login', { username, password })
-    if (response.token) {
-      this.setToken(response.token)
-    }
-    return response
+async login(username: string, password: string): Promise<{ token: string; user: any }> {
+  const response = await this.client!.post('/auth/login', { username, password })
+  const data = response.data
+  if (data.token) {
+    this.setToken(data.token)
   }
+  return data
+}
 
   /**
    * 用户注册
