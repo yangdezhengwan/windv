@@ -19,8 +19,7 @@ const routes = [
   {
     path: '/users',
     name: 'Users',
-    component: () => import('../views/Placeholder.vue'),
-    props: { title: '👥 用户管理', description: '用户管理功能开发中...' },
+    component: () => import('../views/Users.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -32,24 +31,25 @@ const routes = [
   {
     path: '/scripts',
     name: 'Scripts',
-    component: () => import('../views/Placeholder.vue'),
-    props: { title: '💬 话术库', description: '云端话术库管理功能开发中...' },
+    component: () => import('../views/Scripts.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/stats',
     name: 'Stats',
-    component: () => import('../views/Placeholder.vue'),
-    props: { title: '📈 数据统计', description: '数据统计功能开发中...' },
+    component: () => import('../views/Stats.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/settings',
     name: 'Settings',
-    component: () => import('../views/Placeholder.vue'),
-    props: { title: '⚙️ 系统设置', description: '系统设置功能开发中...' },
+    component: () => import('../views/Settings.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/dashboard'
+  }
 ]
 
 const router = createRouter({
