@@ -1,74 +1,200 @@
 <template>
   <div class="stats-page">
+    <!-- Animated Background -->
+    <div class="bg-animation">
+      <div class="bg-grid"></div>
+      <div class="bg-glow bg-glow-1"></div>
+      <div class="bg-glow bg-glow-2"></div>
+    </div>
+    
     <el-container>
-      <el-aside width="200px">
-        <div class="logo"><span class="logo-icon">📺</span><span class="logo-text">小狐狸</span></div>
-        <el-menu :default-active="$route.path" :router="true" background-color="#1a1a2e" text-color="#fff" active-text-color="#409EFF">
-          <el-menu-item index="/"><el-icon><DataAnalysis /></el-icon><span>仪表盘</span></el-menu-item>
-          <el-menu-item index="/platform"><el-icon><Monitor /></el-icon><span>平台适配</span></el-menu-item>
-          <el-menu-item index="/script"><el-icon><ChatDotRound /></el-icon><span>话术库</span></el-menu-item>
-          <el-menu-item index="/risk"><el-icon><Shield /></el-icon><span>风控设置</span></el-menu-item>
-          <el-menu-item index="/stats"><el-icon><DataLine /></el-icon><span>数据报表</span></el-menu-item>
-          <el-menu-item index="/settings"><el-icon><Setting /></el-icon><span>系统设置</span></el-menu-item>
+      <!-- Sidebar -->
+      <el-aside width="220" class="glass-sidebar">
+        <div class="logo-container">
+          <div class="logo-glow">
+            <img src="/icon.png" class="logo-img" alt="Logo" />
+          </div>
+          <div class="logo-text">
+            <span class="brand">小狐狸</span>
+            <span class="tagline">AI Live Assistant</span>
+          </div>
+        </div>
+        
+        <el-menu
+          :default-active="$route.path"
+          :router="true"
+          class="tech-menu"
+          background-color="transparent"
+          text-color="rgba(255,255,255,0.7)"
+          active-text-color="#00d4ff"
+        >
+          <el-menu-item index="/" class="menu-item">
+            <el-icon class="menu-icon"><DataAnalysis /></el-icon>
+            <span>Dashboard</span>
+          </el-menu-item>
+          <el-menu-item index="/platform" class="menu-item">
+            <el-icon class="menu-icon"><Monitor /></el-icon>
+            <span>Platforms</span>
+          </el-menu-item>
+          <el-menu-item index="/script" class="menu-item">
+            <el-icon class="menu-icon"><ChatDotRound /></el-icon>
+            <span>Scripts</span>
+          </el-menu-item>
+          <el-menu-item index="/risk" class="menu-item">
+            <el-icon class="menu-icon"><Shield /></el-icon>
+            <span>Risk Control</span>
+          </el-menu-item>
+          <el-menu-item index="/stats" class="menu-item">
+            <el-icon class="menu-icon"><DataLine /></el-icon>
+            <span>Analytics</span>
+          </el-menu-item>
+          <el-menu-item index="/settings" class="menu-item">
+            <el-icon class="menu-icon"><Setting /></el-icon>
+            <span>Settings</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
 
-      <el-container>
-        <el-header>
-          <h2>数据报表</h2>
-          <div class="date-range">
-            <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              @change="loadData"
-            />
-            <el-button type="primary" @click="loadData">刷新</el-button>
+      <!-- Main Content -->
+      <el-container class="main-container">
+        <el-header class="glass-header">
+          <div class="header-left">
+            <h2 class="page-title">
+              <span class="title-highlight">Data</span>
+              <span class="title-sub">Analytics</span>
+              <span class="title-divider"></span>
+            </h2>
+          </div>
+          <div class="header-right">
+            <div class="date-range">
+              <el-date-picker
+                v-model="dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                @change="loadData"
+                class="tech-search"
+              />
+            </div>
+            <el-button type="primary" class="tech-btn-glow" @click="loadData">
+              <el-icon><Refresh /></el-icon>
+              刷新
+            </el-button>
           </div>
         </el-header>
-        <el-main>
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-card class="chart-card">
-                <template #header><span>弹幕意图分布</span></template>
-                <div ref="intentChartRef" style="height: 300px;"></div>
-              </el-card>
+
+        <el-main class="main-content">
+          <!-- Stats Summary -->
+          <el-row :gutter="20" class="stats-row">
+            <el-col :xs="24" :sm="12" :md="6">
+              <div class="stat-card">
+                <div class="stat-glow blue"></div>
+                <div class="stat-icon danmaku">
+                  <el-icon><ChatLineSquare /></el-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ compareStats.todayDanmaku }}</div>
+                  <div class="stat-label">Total Danmaku</div>
+                </div>
+              </div>
             </el-col>
-            <el-col :span="12">
-              <el-card class="chart-card">
-                <template #header><span>每日数据趋势</span></template>
-                <div ref="trendChartRef" style="height: 300px;"></div>
-              </el-card>
+            <el-col :xs="24" :sm="12" :md="6">
+              <div class="stat-card">
+                <div class="stat-glow green"></div>
+                <div class="stat-icon reply">
+                  <el-icon><ChatDotRound /></el-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ compareStats.yesterdayDanmaku }}</div>
+                  <div class="stat-label">Yesterday</div>
+                </div>
+                <div class="stat-trend" :class="compareStats.change >= 0 ? 'up' : 'down'">
+                  {{ compareStats.change >= 0 ? '+' : '' }}{{ compareStats.change }}%
+                </div>
+              </div>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="6">
+              <div class="stat-card">
+                <div class="stat-glow orange"></div>
+                <div class="stat-icon order">
+                  <el-icon><Goods /></el-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ historyStats.reduce((sum, s) => sum + (s.order_new_count || 0), 0) }}</div>
+                  <div class="stat-label">Total Orders</div>
+                </div>
+              </div>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="6">
+              <div class="stat-card">
+                <div class="stat-glow blue"></div>
+                <div class="stat-icon danmaku">
+                  <el-icon><TrendCharts /></el-icon>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{ historyStats.length }}</div>
+                  <div class="stat-label">Data Days</div>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+
+          <!-- Charts Row 1 -->
+          <el-row :gutter="20" class="section-row">
+            <el-col :xs="24" :lg="12">
+              <div class="tech-card full-width">
+                <div class="card-header">
+                  <span>弹幕意图分布</span>
+                </div>
+                <div ref="intentChartRef" class="chart-container"></div>
+              </div>
+            </el-col>
+            <el-col :xs="24" :lg="12">
+              <div class="tech-card full-width">
+                <div class="card-header">
+                  <span>每日数据趋势</span>
+                </div>
+                <div ref="trendChartRef" class="chart-container"></div>
+              </div>
             </el-col>
           </el-row>
           
-          <el-row :gutter="20" style="margin-top: 20px;">
-            <el-col :span="12">
-              <el-card class="chart-card">
-                <template #header><span>高频问题 TOP 10</span></template>
-                <div ref="topQuestionsChartRef" style="height: 300px;"></div>
-              </el-card>
+          <!-- Charts Row 2 -->
+          <el-row :gutter="20" class="section-row">
+            <el-col :xs="24" :lg="12">
+              <div class="tech-card full-width">
+                <div class="card-header">
+                  <span>高频问题 TOP 10</span>
+                </div>
+                <div ref="topQuestionsChartRef" class="chart-container"></div>
+              </div>
             </el-col>
-            <el-col :span="12">
-              <el-card class="chart-card">
-                <template #header><span>活跃时段分析</span></template>
-                <div ref="activityChartRef" style="height: 300px;"></div>
-              </el-card>
+            <el-col :xs="24" :lg="12">
+              <div class="tech-card full-width">
+                <div class="card-header">
+                  <span>活跃时段分析</span>
+                </div>
+                <div ref="activityChartRef" class="chart-container"></div>
+              </div>
             </el-col>
           </el-row>
           
-          <el-row :gutter="20" style="margin-top: 20px;">
-            <el-col :span="12">
-              <el-card class="chart-card">
-                <template #header><span>转化率漏斗</span></template>
-                <div ref="funnelChartRef" style="height: 300px;"></div>
-              </el-card>
+          <!-- Charts Row 3 -->
+          <el-row :gutter="20" class="section-row">
+            <el-col :xs="24" :lg="12">
+              <div class="tech-card full-width">
+                <div class="card-header">
+                  <span>转化率漏斗</span>
+                </div>
+                <div ref="funnelChartRef" class="chart-container"></div>
+              </div>
             </el-col>
-            <el-col :span="12">
-              <el-card class="chart-card">
-                <template #header><span>数据对比</span></template>
+            <el-col :xs="24" :lg="12">
+              <div class="tech-card full-width">
+                <div class="card-header">
+                  <span>数据对比</span>
+                </div>
                 <div class="compare-info">
                   <div class="compare-item">
                     <span class="label">今日弹幕</span>
@@ -85,34 +211,36 @@
                     </span>
                   </div>
                 </div>
-              </el-card>
+              </div>
             </el-col>
           </el-row>
 
-          <el-card class="table-card" style="margin-top: 20px;">
-            <template #header>
-              <div class="card-header">
-                <span>历史统计</span>
-                <el-button type="primary" @click="exportData">导出Excel</el-button>
-              </div>
-            </template>
-            <el-table :data="historyStats" stripe>
+          <!-- History Table -->
+          <div class="tech-card full-width">
+            <div class="card-header">
+              <span>历史统计</span>
+              <el-button type="primary" class="tech-btn-glow" @click="exportData">
+                <el-icon><Download /></el-icon>
+                导出Excel
+              </el-button>
+            </div>
+            <el-table :data="historyStats" stripe class="tech-table">
               <el-table-column prop="date" label="日期" width="120" />
               <el-table-column prop="danmaku_count" label="弹幕数" width="100" />
               <el-table-column prop="reply_count" label="回复数" width="100" />
               <el-table-column label="回复率" width="100">
                 <template #default="{ row }">
-                  {{ row.reply_count > 0 ? Math.round(row.reply_success_count / row.reply_count * 100) + '%' : '0%' }}
+                  {{ row.reply_count > 0 ? Math.round((row.reply_success_count || 0) / row.reply_count * 100) + '%' : '0%' }}
                 </template>
               </el-table-column>
               <el-table-column prop="order_new_count" label="订单数" width="100" />
               <el-table-column label="操作">
                 <template #default="{ row }">
-                  <el-button size="small" @click="viewDetail(row)">详情</el-button>
+                  <el-button size="small" type="primary" @click="viewDetail(row)">详情</el-button>
                 </template>
               </el-table-column>
             </el-table>
-          </el-card>
+          </div>
         </el-main>
       </el-container>
     </el-container>
@@ -470,21 +598,277 @@ onMounted(loadData)
 <style lang="scss" scoped>
 .stats-page {
   height: 100vh;
-  background-color: #0f0f1a;
-  .el-container { height: 100%; }
-  .el-aside {
-    background-color: #1a1a2e;
-    .logo { height: 60px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid #2d2d44; .logo-icon { font-size: 24px; margin-right: 10px; } .logo-text { color: #fff; font-size: 16px; font-weight: bold; } }
+  background-color: #0a0a14;
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-animation {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  .bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: gridMove 20s linear infinite;
   }
-  .el-header { background-color: #16213e; display: flex; align-items: center; padding: 0 20px; h2 { color: #fff; margin: 0; } }
-  .el-main { background-color: #0f0f1a; padding: 20px; }
+  .bg-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.3;
+    animation: float 10s ease-in-out infinite;
+    &.bg-glow-1 {
+      width: 400px;
+      height: 400px;
+      background: #409eff;
+      top: -100px;
+      right: -100px;
+    }
+    &.bg-glow-2 {
+      width: 300px;
+      height: 300px;
+      background: #67c23a;
+      bottom: -50px;
+      left: 20%;
+      animation-delay: -5s;
+    }
+  }
 }
 
-.chart-card, .table-card {
-  background-color: #1a1a2e;
-  border: none;
-  :deep(.el-card__header) { border-color: #2d2d44; color: #fff; }
+@keyframes gridMove {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(50px); }
 }
 
-.card-header { display: flex; justify-content: space-between; color: #fff; }
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-30px) scale(1.05); }
+}
+
+.glass-sidebar {
+  background: linear-gradient(180deg, rgba(26, 26, 46, 0.95) 0%, rgba(15, 15, 26, 0.98) 100%) !important;
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 10;
+}
+
+.logo-container {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  .logo-glow {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #00d4ff, #0072ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    .logo-img { width: 28px; height: 28px; }
+  }
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+    .brand { color: #fff; font-size: 16px; font-weight: 600; }
+    .tagline { color: rgba(255, 255, 255, 0.5); font-size: 10px; }
+  }
+}
+
+.tech-menu {
+  border: none !important;
+  .menu-item {
+    height: 50px;
+    line-height: 50px;
+    margin: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    &:hover { background: rgba(0, 212, 255, 0.1) !important; }
+    &.is-active {
+      background: rgba(0, 212, 255, 0.15) !important;
+      border-left: 3px solid #00d4ff;
+    }
+    .menu-icon { font-size: 18px; margin-right: 12px; }
+  }
+}
+
+.main-container { position: relative; z-index: 1; }
+
+.glass-header {
+  background: linear-gradient(180deg, rgba(22, 33, 62, 0.9) 0%, rgba(15, 15, 26, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 70px;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  .title-highlight { color: #fff; font-size: 24px; font-weight: 600; }
+  .title-sub { color: rgba(255, 255, 255, 0.5); font-size: 18px; }
+  .title-divider {
+    width: 4px;
+    height: 24px;
+    background: linear-gradient(180deg, #00d4ff, #0072ff);
+    border-radius: 2px;
+  }
+}
+
+.header-right { display: flex; align-items: center; gap: 16px; }
+
+.tech-btn-glow {
+  background: linear-gradient(135deg, #00d4ff, #0072ff) !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+}
+
+.tech-search {
+  :deep(.el-input__wrapper) {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    &:hover, &:focus-within { border-color: rgba(0, 212, 255, 0.5); }
+  }
+  :deep(.el-input__inner) { color: #fff; }
+}
+
+.main-content { padding: 24px; position: relative; z-index: 1; }
+
+.stats-row { margin-bottom: 24px; }
+
+.stat-card {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(15, 15, 26, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  &:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+  .stat-glow {
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.3;
+    &.blue { background: #409eff; }
+    &.green { background: #67c23a; }
+    &.orange { background: #e6a23c; }
+  }
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 12px;
+    &.danmaku { background: rgba(64, 158, 255, 0.2); color: #409eff; }
+    &.reply { background: rgba(103, 194, 58, 0.2); color: #67c23a; }
+    &.order { background: rgba(230, 162, 60, 0.2); color: #e6a23c; }
+  }
+  .stat-info {
+    .stat-value { color: #fff; font-size: 28px; font-weight: 700; }
+    .stat-label { color: rgba(255, 255, 255, 0.5); font-size: 12px; margin-top: 4px; }
+  }
+  .stat-trend {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    &.up { color: #67c23a; }
+    &.down { color: #f56c6c; }
+  }
+}
+
+.tech-card {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(15, 15, 26, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  &.full-width { width: 100%; margin-bottom: 24px; }
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.2);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .chart-container { height: 300px; padding: 16px; }
+}
+
+.tech-table {
+  background: transparent;
+  :deep(.el-table__header-wrapper th) {
+    background: rgba(64, 158, 255, 0.1) !important;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+  }
+  :deep(.el-table__body-wrapper) {
+    tr:hover > td { background: rgba(0, 212, 255, 0.05) !important; }
+  }
+  :deep(td) {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+.compare-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  .compare-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    .label { color: rgba(255, 255, 255, 0.6); font-size: 14px; }
+    .value { color: #fff; font-size: 20px; font-weight: 600; &.up { color: #67c23a; } &.down { color: #f56c6c; } }
+  }
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  :deep(.el-input__wrapper) {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+  }
+  :deep(.el-range-input) { color: #fff; }
+  :deep(.el-range-separator) { color: rgba(255, 255, 255, 0.4); }
+}
+
+.detail-content {
+  :deep(.el-descriptions__label) { color: rgba(255, 255, 255, 0.6); }
+  :deep(.el-descriptions__content) { color: #fff; }
+}
 </style>
