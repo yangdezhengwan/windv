@@ -252,7 +252,8 @@ onMounted(() => {
 .users-page {
   padding: 24px;
   min-height: 100vh;
-  position: relative;
+  box-sizing: border-box;
+  overflow-x: auto;
 }
 
 .page-header {
@@ -261,7 +262,7 @@ onMounted(() => {
 
 .page-header h1 {
   color: #fff;
-  font-size: 28px;
+  font-size: 24px;
   margin-bottom: 8px;
 }
 
@@ -274,22 +275,24 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .search-input {
-  width: 300px;
+  width: 250px;
 }
 
 .content-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 20px;
-  backdrop-filter: blur(10px);
+  padding: 16px;
+  overflow: hidden;
 }
 
 .pagination {
-  margin-top: 20px;
+  margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 </style>

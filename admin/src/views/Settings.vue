@@ -404,15 +404,16 @@ onMounted(() => {
 .settings-page {
   padding: 24px;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .page-header h1 {
   color: #fff;
-  font-size: 28px;
+  font-size: 24px;
   margin-bottom: 8px;
 }
 
@@ -424,14 +425,15 @@ onMounted(() => {
 .settings-section {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px;
+  max-width: 800px;
 }
 
 .settings-section h3 {
   color: #fff;
-  font-size: 18px;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
+  font-size: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -442,21 +444,22 @@ onMounted(() => {
 }
 
 .domain-info {
-  margin-top: 20px;
-  padding: 16px;
+  margin-top: 16px;
+  padding: 14px;
   background: rgba(0, 212, 255, 0.1);
   border-radius: 8px;
 }
 
 .domain-info p {
   color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .dns-record {
   display: flex;
   gap: 12px;
   font-family: monospace;
+  font-size: 13px;
 }
 
 .record-type {
@@ -467,12 +470,13 @@ onMounted(() => {
 }
 
 .ssl-status {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .ssl-info {
   margin-top: 8px;
   color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
 }
 
 .ssl-actions {
@@ -483,28 +487,30 @@ onMounted(() => {
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
 }
 
 .info-item {
   display: flex;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 10px 14px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
 }
 
 .info-label {
   color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
 }
 
 .info-value {
   color: #fff;
   font-weight: 500;
+  font-size: 13px;
 }
 
 .actions {
-  margin-top: 20px;
+  margin-top: 16px;
 }
 </style>

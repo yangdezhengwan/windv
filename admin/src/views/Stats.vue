@@ -256,15 +256,16 @@ onMounted(() => {
 .stats-page {
   padding: 24px;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .page-header h1 {
   color: #fff;
-  font-size: 28px;
+  font-size: 24px;
   margin-bottom: 8px;
 }
 
@@ -273,18 +274,18 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.stats-row, .chart-row {
-  margin-bottom: 20px;
+.stats-row {
+  margin-bottom: 16px !important;
 }
 
 .stat-card {
   background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 150, 255, 0.1));
   border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .stat-card.secondary {
@@ -293,37 +294,39 @@ onMounted(() => {
 }
 
 .stat-icon {
-  font-size: 36px;
+  font-size: 28px;
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: bold;
   color: #fff;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
 }
 
 .chart-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 20px;
-  min-height: 300px;
+  padding: 16px;
+  min-height: 280px;
 }
 
 .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .chart-header h3 {
   color: #fff;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .chart-placeholder {
@@ -332,8 +335,10 @@ onMounted(() => {
 }
 
 .trend-list {
-  margin-top: 20px;
+  margin-top: 16px;
   text-align: left;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .trend-item {
@@ -348,20 +353,20 @@ onMounted(() => {
 }
 
 .question-list {
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
 .question-item {
   display: flex;
   align-items: center;
-  padding: 12px;
+  padding: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .q-rank {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   background: rgba(0, 212, 255, 0.2);
   border-radius: 50%;
   display: flex;
@@ -369,43 +374,45 @@ onMounted(() => {
   justify-content: center;
   color: #00d4ff;
   font-weight: bold;
-  margin-right: 12px;
+  margin-right: 10px;
+  font-size: 12px;
 }
 
 .q-text {
   flex: 1;
   color: #fff;
+  font-size: 14px;
 }
 
 .q-count {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .hour-distribution {
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
 .hour-item {
   display: flex;
   align-items: center;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 .hour-label {
-  width: 60px;
+  width: 50px;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .hour-bar {
   flex: 1;
-  height: 20px;
+  height: 16px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   overflow: hidden;
-  margin: 0 12px;
+  margin: 0 8px;
 }
 
 .hour-fill {
@@ -416,14 +423,15 @@ onMounted(() => {
 }
 
 .hour-count {
-  width: 50px;
+  width: 40px;
   text-align: right;
   color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
 }
 
 .empty {
   text-align: center;
   color: rgba(255, 255, 255, 0.3);
-  padding: 40px;
+  padding: 30px;
 }
 </style>

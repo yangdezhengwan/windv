@@ -11,40 +11,41 @@ const routes = [
     component: () => import('../views/Login.vue')
   },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('../views/Dashboard.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/users',
-    name: 'Users',
-    component: () => import('../views/Users.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/licenses',
-    name: 'Licenses',
-    component: () => import('../views/Licenses.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/scripts',
-    name: 'Scripts',
-    component: () => import('../views/Scripts.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/stats',
-    name: 'Stats',
-    component: () => import('../views/Stats.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/settings',
-    name: 'Settings',
-    component: () => import('../views/Settings.vue'),
-    meta: { requiresAuth: true }
+    path: '/',
+    component: () => import('../components/AppLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('../views/Dashboard.vue')
+      },
+      {
+        path: 'users',
+        name: 'Users',
+        component: () => import('../views/Users.vue')
+      },
+      {
+        path: 'licenses',
+        name: 'Licenses',
+        component: () => import('../views/Licenses.vue')
+      },
+      {
+        path: 'scripts',
+        name: 'Scripts',
+        component: () => import('../views/Scripts.vue')
+      },
+      {
+        path: 'stats',
+        name: 'Stats',
+        component: () => import('../views/Stats.vue')
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: () => import('../views/Settings.vue')
+      }
+    ]
   },
   {
     path: '/:pathMatch(.*)*',
@@ -61,7 +62,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   
-  if (to.meta.requiresAuth && !token) {
+  if (to.meta.requiresAuth && !token && to.path !== '/login') {
     next('/login')
   } else if (to.path === '/login' && token) {
     next('/dashboard')

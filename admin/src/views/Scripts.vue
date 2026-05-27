@@ -352,16 +352,18 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .search-input {
-  width: 250px;
+  width: 200px;
 }
 
 .content-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px;
+  overflow: hidden;
 }
 
 .keywords {
@@ -384,12 +386,13 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 250px;
+  max-width: 200px;
 }
 
 .pagination {
-  margin-top: 20px;
+  margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 </style>
