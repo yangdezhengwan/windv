@@ -57,7 +57,7 @@
         <div class="system-status">
           <div class="status-item">
             <div class="status-dot" :class="{ active: isRunning }"></div>
-            <span>{{ isRunning ? 'System Active' : 'Standby' }}</span>
+            <span>{{ isRunning ? '系统运行中' : '待机中' }}</span>
           </div>
           <div class="version">v{{ version }}</div>
         </div>
@@ -167,7 +167,7 @@
                       <div class="room-info">
                         <div class="room-name">{{ room.name }}</div>
                         <div class="room-status" :class="room.status">
-                          {{ room.status === 'monitoring' ? 'LIVE' : 'PAUSED' }}
+                          {{ room.status === 'monitoring' ? '直播中' : '已暂停' }}
                         </div>
                       </div>
                       <div class="room-actions">
@@ -281,12 +281,12 @@ function formatTime(time: string): string {
 
 function getIntentLabel(intent: string): string {
   const labels: Record<string, string> = {
-    chat: 'CHAT',
-    price: 'PRICE',
-    logistics: 'SHIP',
-    aftersale: 'SRV',
-    size: 'SIZE',
-    discount: 'SALE'
+    chat: '弹幕',
+    price: '价格',
+    logistics: '物流',
+    aftersale: '售后',
+    size: '尺码',
+    discount: '优惠'
   }
   return labels[intent] || 'OTHER'
 }

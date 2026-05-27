@@ -140,12 +140,12 @@
                   <el-icon><Search /></el-icon>
                 </template>
               </el-input>
-              <el-select v-model="filter平台" placeholder="平台" class="tech-select">
-                <el-option label="All 平台管理" value="" />
-                <el-option label="Taobao" value="taobao" />
-                <el-option label="Pinduoduo" value="pinduoduo" />
-                <el-option label="Douyin" value="douyin" />
-                <el-option label="Video Channel" value="video_we" />
+              <el-select v-model="filter平台" placeholder="选择平台" class="tech-select">
+                <el-option label="全部平台" value="" />
+                <el-option label="淘宝" value="taobao" />
+                <el-option label="拼多多" value="pinduoduo" />
+                <el-option label="抖音" value="douyin" />
+                <el-option label="视频号" value="video_we" />
               </el-select>
             </div>
           </div>
@@ -187,7 +187,7 @@
                 >
                   <el-icon v-if="room.status === 'monitoring'"><VideoPause /></el-icon>
                   <el-icon v-else><VideoPlay /></el-icon>
-                  {{ room.status === 'monitoring' ? 'Stop' : 'Start' }}
+                  {{ room.status === 'monitoring' ? '停止' : '启动' }}
                 </el-button>
                 <el-button class="action-btn-secondary" @click="editRoom(room)">
                   <el-icon><Edit /></el-icon>
@@ -221,34 +221,34 @@
       :close-on-click-modal="false"
     >
       <el-form :model="roomForm" label-width="100px" class="tech-form">
-        <el-form-item label="平台">
+        <el-form-item label="选择平台">
           <el-select v-model="roomForm.platform" class="tech-select-full">
-            <el-option label="Taobao Live" value="taobao">
+            <el-option label="淘宝直播" value="taobao">
               <span style="margin-right: 8px">🛒</span> Taobao Live
             </el-option>
-            <el-option label="Pinduoduo Live" value="pinduoduo">
+            <el-option label="拼多多直播" value="pinduoduo">
               <span style="margin-right: 8px">🎁</span> Pinduoduo Live
             </el-option>
-            <el-option label="Douyin Live" value="douyin">
+            <el-option label="抖音直播" value="douyin">
               <span style="margin-right: 8px">🎵</span> Douyin Live
             </el-option>
-            <el-option label="Video Channel" value="video_we">
+            <el-option label="视频号" value="video_we">
               <span style="margin-right: 8px">📱</span> Video Channel
             </el-option>
           </el-select>
         </el-form-item>
         
         <el-form-item label="Room Name">
-          <el-input v-model="roomForm.name" placeholder="Enter room name" class="tech-input" />
+          <el-input v-model="roomForm.name" placeholder="输入房间名称" class="tech-input" />
         </el-form-item>
         
         <el-form-item label="Room ID">
-          <el-input v-model="roomForm.room_id" placeholder="Enter room ID" class="tech-input" />
+          <el-input v-model="roomForm.room_id" placeholder="输入房间ID" class="tech-input" />
           <div class="form-hint">Found in the live room URL</div>
         </el-form-item>
         
         <el-form-item label="Stream URL">
-          <el-input v-model="roomForm.stream_url" placeholder="Enter stream URL" class="tech-input" />
+          <el-input v-model="roomForm.stream_url" placeholder="输入直播地址" class="tech-input" />
         </el-form-item>
       </el-form>
       
@@ -327,10 +327,10 @@ function get平台Icon(platform: string): string {
 
 function get平台Name(platform: string): string {
   const names: Record<string, string> = {
-    taobao: 'Taobao',
+    taobao: '淘宝',
     pinduoduo: 'PDD',
-    douyin: 'Douyin',
-    video_we: 'Video'
+    douyin: '抖音',
+    video_we: '视频'
   }
   return names[platform] || platform
 }

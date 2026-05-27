@@ -173,7 +173,7 @@
     <!-- Add/Edit Script Dialog -->
     <el-dialog
       v-model="showAddScript"
-      :title="editingScript ? 'Edit Script' : 'New Script'"
+      :title="editingScript ? '编辑话术' : '新建话术'"
       width="600px"
       class="tech-dialog"
     >
@@ -303,13 +303,13 @@ function getCategoryIcon(type: string): string {
 
 function getIntentLabel(intent: string): string {
   const labels: Record<string, string> = {
-    chat: 'CHAT',
-    price: 'PRICE',
-    logistics: 'SHIP',
-    aftersale: 'SRV',
-    size: 'SPEC',
-    discount: 'SALE',
-    ad: 'PROMO'
+    chat: '弹幕',
+    price: '价格',
+    logistics: '物流',
+    aftersale: '售后',
+    size: '规格',
+    discount: '优惠',
+    ad: '推广'
   }
   return labels[intent] || intent.toUpperCase()
 }
@@ -340,7 +340,7 @@ async function loadData() {
     categories.value = cats
     scripts.value = scrs
   } catch (error) {
-    ElMessage.error('Failed to load data')
+    ElMessage.error('加载数据失败')
   }
 }
 
@@ -366,18 +366,18 @@ async function duplicateScript(script: Script) {
       priority: script.priority
     }
     await window.windv.script.create(newScript)
-    ElMessage.success('Script duplicated')
+    ElMessage.success('话术已复制')
     loadData()
   } catch (error) {
-    ElMessage.error('Duplication failed')
+    ElMessage.error('复制失败')
   }
 }
 
 async function deleteScript(id: string) {
   try {
-    await ElMessageBox.confirm('Delete this script?', 'Confirm', { type: 'warning' })
+    await ElMessageBox.confirm('确定删除此话术吗？', '确认', { type: 'warning' })
     await window.windv.script.delete(id)
-    ElMessage.success('Script deleted')
+    ElMessage.success('话术已删除')
     loadData()
   } catch (error) {
     // Cancelled
@@ -397,10 +397,10 @@ async function saveScript() {
     
     if (editingScript.value) {
       await window.windv.script.update({ id: editingScript.value.id, ...data })
-      ElMessage.success('Script updated')
+      ElMessage.success('话术已更新')
     } else {
       await window.windv.script.create(data)
-      ElMessage.success('Script created')
+      ElMessage.success('话术已创建')
     }
     
     showAddScript.value = false
@@ -408,7 +408,7 @@ async function saveScript() {
     resetForm()
     loadData()
   } catch (error) {
-    ElMessage.error('Save failed')
+    ElMessage.error('保存失败')
   }
 }
 

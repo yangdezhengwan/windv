@@ -366,9 +366,9 @@ async function saveSettings() {
     ]
     
     await Promise.all(promises)
-    ElMessage.success('Settings saved')
+    ElMessage.success('设置已保存')
   } catch (error) {
-    ElMessage.error('Save failed')
+    ElMessage.error('保存失败')
   }
 }
 
@@ -379,14 +379,14 @@ async function exportScripts() {
       ElMessage.success(`Exported to ${result.filePath}`)
     }
   } catch (error) {
-    ElMessage.error('Export failed')
+    ElMessage.error('导出失败')
   }
 }
 
 async function importScripts() {
   try {
     const filePath = await window.windv.system.selectFile({
-      filters: [{ name: 'Excel', extensions: ['xlsx', 'xls'] }]
+      filters: [{ name: 'Excel文件', extensions: ['xlsx', 'xls'] }]
     })
     if (!filePath) return
     
@@ -395,7 +395,7 @@ async function importScripts() {
       ElMessage.success(`Imported ${result.count} scripts`)
     }
   } catch (error) {
-    ElMessage.error('Import failed')
+    ElMessage.error('导入失败')
   }
 }
 
@@ -406,7 +406,7 @@ async function downloadTemplate() {
       ElMessage.success(`Template saved to ${result.filePath}`)
     }
   } catch (error) {
-    ElMessage.error('Download failed')
+    ElMessage.error('下载失败')
   }
 }
 
@@ -414,24 +414,24 @@ async function createBackup() {
   try {
     const result = await window.windv.backup.create()
     if (result.success) {
-      ElMessage.success('Backup created')
+      ElMessage.success('备份已创建')
     }
   } catch (error) {
-    ElMessage.error('Backup failed')
+    ElMessage.error('备份失败')
   }
 }
 
 async function restoreBackup() {
   try {
     const filePath = await window.windv.system.selectFile({
-      filters: [{ name: 'Backup', extensions: ['db', 'zip'] }]
+      filters: [{ name: '备份文件', extensions: ['db', 'zip'] }]
     })
     if (!filePath) return
     
     await window.windv.backup.restore(filePath)
-    ElMessage.success('Backup restored')
+    ElMessage.success('备份已恢复')
   } catch (error) {
-    ElMessage.error('Restore failed')
+    ElMessage.error('恢复失败')
   }
 }
 
