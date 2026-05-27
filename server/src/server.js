@@ -29,6 +29,7 @@ const syncRoutes = require('./routes/sync');
 const statsRoutes = require('./routes/stats');
 const userRoutes = require('./routes/users');
 const settingsRoutes = require('./routes/settings');
+const licenseRoutes = require('./routes/license');
 
 // 中间件
 const { authenticate } = require('./middleware/auth');
@@ -93,6 +94,7 @@ app.use('/api/sync', authenticate, syncRoutes);
 app.use('/api/stats', authenticate, statsRoutes);
 app.use('/api/users', authenticate, userRoutes);
 app.use('/api/settings', authenticate, settingsRoutes);
+app.use('/api/license', licenseRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {
