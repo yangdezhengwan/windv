@@ -30,27 +30,27 @@
         >
           <el-menu-item index="/" class="menu-item">
             <el-icon class="menu-icon"><DataAnalysis /></el-icon>
-            <span>Dashboard</span>
+            <span>仪表盘</span>
           </el-menu-item>
           <el-menu-item index="/platform" class="menu-item">
             <el-icon class="menu-icon"><Monitor /></el-icon>
-            <span>Platforms</span>
+            <span>平台管理</span>
           </el-menu-item>
           <el-menu-item index="/script" class="menu-item">
             <el-icon class="menu-icon"><ChatDotRound /></el-icon>
-            <span>Scripts</span>
+            <span>话术库</span>
           </el-menu-item>
           <el-menu-item index="/risk" class="menu-item">
             <el-icon class="menu-icon"><Shield /></el-icon>
-            <span>Risk Control</span>
+            <span>风控设置</span>
           </el-menu-item>
           <el-menu-item index="/stats" class="menu-item">
             <el-icon class="menu-icon"><DataLine /></el-icon>
-            <span>Analytics</span>
+            <span>数据分析</span>
           </el-menu-item>
           <el-menu-item index="/settings" class="menu-item">
             <el-icon class="menu-icon"><Setting /></el-icon>
-            <span>Settings</span>
+            <span>系统设置</span>
           </el-menu-item>
         </el-menu>
       </el-aside>

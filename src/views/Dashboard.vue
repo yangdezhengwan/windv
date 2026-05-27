@@ -29,27 +29,27 @@
         >
           <el-menu-item index="/" class="menu-item">
             <el-icon class="menu-icon"><DataAnalysis /></el-icon>
-            <span>Dashboard</span>
+            <span>仪表盘</span>
           </el-menu-item>
           <el-menu-item index="/platform" class="menu-item">
             <el-icon class="menu-icon"><Monitor /></el-icon>
-            <span>Platforms</span>
+            <span>平台管理</span>
           </el-menu-item>
           <el-menu-item index="/script" class="menu-item">
             <el-icon class="menu-icon"><ChatDotRound /></el-icon>
-            <span>Scripts</span>
+            <span>话术库</span>
           </el-menu-item>
           <el-menu-item index="/risk" class="menu-item">
             <el-icon class="menu-icon"><Shield /></el-icon>
-            <span>Risk Control</span>
+            <span>风控设置</span>
           </el-menu-item>
           <el-menu-item index="/stats" class="menu-item">
             <el-icon class="menu-icon"><DataLine /></el-icon>
-            <span>Analytics</span>
+            <span>数据分析</span>
           </el-menu-item>
           <el-menu-item index="/settings" class="menu-item">
             <el-icon class="menu-icon"><Setting /></el-icon>
-            <span>Settings</span>
+            <span>系统设置</span>
           </el-menu-item>
         </el-menu>
         
@@ -92,7 +92,7 @@
                 </div>
                 <div class="stat-info">
                   <div class="stat-value">{{ formatNumber(todayStats.danmakuCount) }}</div>
-                  <div class="stat-label">Danmaku Today</div>
+                  <div class="stat-label">今日弹幕</div>
                 </div>
                 <div class="stat-trend up">+12%</div>
               </div>
@@ -131,7 +131,7 @@
                 </div>
                 <div class="stat-info">
                   <div class="stat-value">{{ formatNumber(todayStats.orderCount) }}</div>
-                  <div class="stat-label">Orders Today</div>
+                  <div class="stat-label">今日订单</div>
                 </div>
                 <div class="stat-trend up">+23%</div>
               </div>
@@ -145,7 +145,7 @@
                 <div class="card-header">
                   <div class="header-title">
                     <span class="title-icon active"></span>
-                    <span>Active Rooms</span>
+                    <span>活跃房间</span>
                   </div>
                   <el-button type="primary" class="tech-btn" @click="$router.push('/platform')">
                     <el-icon><Plus /></el-icon>
@@ -191,7 +191,7 @@
                 <div class="card-header">
                   <div class="header-title">
                     <span class="title-icon log"></span>
-                    <span>Live Logs</span>
+                    <span>弹幕日志</span>
                   </div>
                   <el-button size="small" class="tech-btn-secondary" @click="clearLogs">
                     Clear

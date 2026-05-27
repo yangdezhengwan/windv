@@ -18,6 +18,7 @@ import { StatisticsCollector } from './StatisticsCollector'
 import { HighFrequencyDetector } from './HighFrequencyDetector'
 import { OrderConfigManager } from './OrderConfigManager'
 import { PopularityManager } from './PopularityManager'
+import { LoopMessageManager } from './LoopMessageManager'
 
 interface ActiveRoom {
   id: string
@@ -52,6 +53,7 @@ export class PlatformManager {
   private highFrequencyDetector: HighFrequencyDetector
   private orderConfigManager: OrderConfigManager
   private popularityManager: PopularityManager
+  private loopMessageManager: LoopMessageManager
   private mainWindow: BrowserWindow | null = null
 
   constructor() {
@@ -66,6 +68,12 @@ export class PlatformManager {
     this.highFrequencyDetector = HighFrequencyDetector.getInstance()
     this.orderConfigManager = OrderConfigManager.getInstance()
     this.popularityManager = PopularityManager.getInstance()
+    this.loopMessageManager = LoopMessageManager.getInstance()
+
+    // 设置循环消息回调
+    this.loopMessageManager.on('send-message', (message: string, roomId: string) => {
+      this.sendLoopMessage(roomId, message)
+    })
 
     // 设置人气辅助的回调
     this.popularityManager.setDanmakuCallback(this.sendVirtualDanmaku.bind(this))
@@ -175,6 +183,9 @@ export class PlatformManager {
     // 启动人气辅助
     this.popularityManager.startRoom(roomId)
 
+    // 启动循环消息
+    this.loopMessageManager.startRoom(roomId)
+
     // 通知渲染进程
     this.sendToRenderer('room:status-change', { roomId, status: 'monitoring' })
 
@@ -194,6 +205,9 @@ export class PlatformManager {
 
       // 停止人气辅助
       this.popularityManager.stopRoom(roomId)
+
+      // 停止循环消息
+      this.loopMessageManager.stopRoom(roomId)
 
       // 更新数据库状态
       const db = getDatabase()
@@ -463,6 +477,23 @@ export class PlatformManager {
         this.sendToRenderer('like:new', { roomId, isVirtual: true })
       } catch (error) {
         log.error(`发送虚拟点赞失败 [${roomId}]: ${error}`)
+      }
+    }
+  }
+
+  /**
+   * 发送循环消息
+   */
+  private async sendLoopMessage(roomId: string, content: string): Promise<void> {
+    const activeRoom = this.activeRooms.get(roomId)
+    if (activeRoom && activeRoom.status === 'monitoring') {
+      try {
+        await activeRoom.adapter.sendDanmaku(content)
+        // 发送事件到渲染进程
+        this.sendToRenderer('loop:send', { roomId, content })
+        log.info(`循环消息已发送 [${roomId}]: ${content}`)
+      } catch (error) {
+        log.error(`发送循环消息失败 [${roomId}]: ${error}`)
       }
     }
   }

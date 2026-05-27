@@ -7,12 +7,13 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build && electron-builder",
     "build:vite": "vue-tsc --noEmit && vite build",
-    "build:win": "vue-tsc --noEmit && vite build && electron-builder --win",
+    "build:win": "vue-tsc --noEmit && vite build && node resources/make-rounded-ico.js && electron-builder --win",
     "build:linux": "vue-tsc --noEmit && vite build && electron-builder --linux",
     "preview": "vite preview",
     "electron:dev": "vite --mode electron",
     "typecheck": "vue-tsc --noEmit",
-    "db:migrate": "tsx scripts/migrate.ts"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "icons": "node resources/make-rounded-ico.js"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",

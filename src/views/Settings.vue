@@ -312,17 +312,17 @@
               <div class="settings-card">
                 <div class="card-header">
                   <div class="header-icon">💾</div>
-                  <div class="header-title">Data Management</div>
+                  <div class="header-title">数据管理</div>
                 </div>
                 <div class="card-body">
                   <div class="data-actions">
                     <el-button class="data-btn" @click="exportScripts">
                       <el-icon><Download /></el-icon>
-                      Export Scripts (Excel)
+                      导出话术 (Excel)
                     </el-button>
                     <el-button class="data-btn" @click="importScripts">
                       <el-icon><Upload /></el-icon>
-                      Import Scripts
+                      导入话术
                     </el-button>
                     <el-button class="data-btn" @click="downloadTemplate">
                       <el-icon><Document /></el-icon>

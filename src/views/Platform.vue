@@ -83,7 +83,7 @@
                   <div class="stat-icon platform-taobao">🛒</div>
                   <div class="stat-info">
                     <div class="stat-value">{{ platformStats.taobao }}</div>
-                    <div class="stat-label">Taobao Rooms</div>
+                    <div class="stat-label">淘宝房间</div>
                   </div>
                 </div>
                 <div class="stat-bar">
@@ -98,7 +98,7 @@
                   <div class="stat-icon platform-pdd">🎁</div>
                   <div class="stat-info">
                     <div class="stat-value">{{ platformStats.pinduoduo }}</div>
-                    <div class="stat-label">Pinduoduo Rooms</div>
+                    <div class="stat-label">拼多多房间</div>
                   </div>
                 </div>
                 <div class="stat-bar">
@@ -113,7 +113,7 @@
                   <div class="stat-icon platform-douyin">🎵</div>
                   <div class="stat-info">
                     <div class="stat-value">{{ platformStats.douyin }}</div>
-                    <div class="stat-label">Douyin Rooms</div>
+                    <div class="stat-label">抖音房间</div>
                   </div>
                 </div>
                 <div class="stat-bar">
@@ -127,7 +127,7 @@
           <div class="section-header">
             <div class="section-title">
               <span class="title-dot active"></span>
-              <span>Live Rooms</span>
+              <span>直播房间</span>
             </div>
             <div class="section-actions">
               <el-input

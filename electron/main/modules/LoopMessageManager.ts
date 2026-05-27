@@ -7,6 +7,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import log from 'electron-log'
+import { EventEmitter } from 'events'
 
 export interface LoopMessage {
   id: string
@@ -35,13 +36,16 @@ export interface LoopSchedule {
   enabled: boolean
 }
 
-export class LoopMessageManager {
+export class LoopMessageManager extends EventEmitter {
   private static instance: LoopMessageManager
   private configPath: string
   private config: LoopConfig
   private schedules: LoopSchedule[] = []
+  private activeRooms: Set<string> = new Set()
+  private timers: Map<string, NodeJS.Timeout> = new Map()
   
   private constructor() {
+    super()
     this.configPath = join(app.getPath('userData'), 'loop-config.json')
     this.config = this.loadConfig()
     this.schedules = this.loadSchedules()
@@ -53,6 +57,87 @@ export class LoopMessageManager {
       LoopMessageManager.instance = new LoopMessageManager()
     }
     return LoopMessageManager.instance
+  }
+
+  /**
+   * 启动房间的循环消息
+   */
+  public startRoom(roomId: string): void {
+    if (!this.config.enabled || this.activeRooms.has(roomId)) {
+      return
+    }
+
+    this.activeRooms.add(roomId)
+    log.info(`启动房间 ${roomId} 的循环消息`)
+
+    // 发送初始延迟
+    const initialDelay = this.getRandomInterval()
+    const timer = setTimeout(() => {
+      this.sendNextMessage(roomId)
+    }, initialDelay)
+    this.timers.set(roomId, timer)
+  }
+
+  /**
+   * 停止房间的循环消息
+   */
+  public stopRoom(roomId: string): void {
+    this.activeRooms.delete(roomId)
+    
+    const timer = this.timers.get(roomId)
+    if (timer) {
+      clearTimeout(timer)
+      this.timers.delete(roomId)
+    }
+    
+    log.info(`停止房间 ${roomId} 的循环消息`)
+  }
+
+  /**
+   * 发送下一条消息
+   */
+  private sendNextMessage(roomId: string): void {
+    if (!this.activeRooms.has(roomId) || !this.config.enabled) {
+      return
+    }
+
+    // 获取要发送的消息
+    const enabledMessages = this.config.messages.filter(m => m.enabled)
+    if (enabledMessages.length === 0) {
+      return
+    }
+
+    // 选择消息
+    let message: LoopMessage
+    if (this.config.randomOrder) {
+      message = enabledMessages[Math.floor(Math.random() * enabledMessages.length)]
+    } else {
+      // 按优先级排序
+      const sorted = [...enabledMessages].sort((a, b) => a.priority - b.priority)
+      message = sorted[0]
+    }
+
+    // 发送消息事件
+    this.emit('send-message', message.content, roomId)
+
+    // 设置下一次发送
+    const nextDelay = this.getRandomInterval()
+    const timer = setTimeout(() => {
+      this.sendNextMessage(roomId)
+    }, nextDelay)
+    this.timers.set(roomId, timer)
+  }
+
+  /**
+   * 获取随机间隔
+   */
+  private getRandomInterval(): number {
+    if (this.config.useRandomInterval) {
+      const min = this.config.minInterval * 1000
+      const max = this.config.maxInterval * 1000
+      return min + Math.random() * (max - min)
+    }
+    return this.config.interval * 1000
   }
 
   /**
