@@ -29,27 +29,27 @@
         >
           <el-menu-item index="/" class="menu-item">
             <el-icon class="menu-icon"><DataAnalysis /></el-icon>
-            <span>Dashboard</span>
+            <span>仪表盘</span>
           </el-menu-item>
           <el-menu-item index="/platform" class="menu-item">
             <el-icon class="menu-icon"><Monitor /></el-icon>
-            <span>Platforms</span>
+            <span>平台管理</span>
           </el-menu-item>
           <el-menu-item index="/script" class="menu-item">
             <el-icon class="menu-icon"><ChatDotRound /></el-icon>
-            <span>Scripts</span>
+            <span>话术库</span>
           </el-menu-item>
           <el-menu-item index="/risk" class="menu-item">
             <el-icon class="menu-icon"><Shield /></el-icon>
-            <span>Risk Control</span>
+            <span>风控设置</span>
           </el-menu-item>
           <el-menu-item index="/stats" class="menu-item">
             <el-icon class="menu-icon"><DataLine /></el-icon>
-            <span>Analytics</span>
+            <span>数据分析</span>
           </el-menu-item>
           <el-menu-item index="/settings" class="menu-item">
             <el-icon class="menu-icon"><Setting /></el-icon>
-            <span>Settings</span>
+            <span>系统设置</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
@@ -60,7 +60,7 @@
           <div class="header-left">
             <h2 class="page-title">
               <span class="title-highlight">System</span>
-              <span class="title-sub">Settings</span>
+              <span class="title-sub">系统设置</span>
               <span class="title-divider"></span>
             </h2>
           </div>
@@ -76,23 +76,23 @@
           <el-row :gutter="24">
             <!-- Left Column -->
             <el-col :xs="24" :lg="12">
-              <!-- General Settings -->
+              <!-- 通用设置 Settings -->
               <div class="settings-card">
                 <div class="card-header">
                   <div class="header-icon">⚙️</div>
-                  <div class="header-title">General</div>
+                  <div class="header-title">通用设置</div>
                 </div>
                 <div class="card-body">
                   <div class="setting-item">
                     <div class="setting-info">
-                      <div class="setting-label">Auto Start</div>
+                      <div class="setting-label">开机启动</div>
                       <div class="setting-desc">Launch on system startup</div>
                     </div>
                     <el-switch v-model="settings.autoStart" />
                   </div>
                   <div class="setting-item">
                     <div class="setting-info">
-                      <div class="setting-label">Minimize to Tray</div>
+                      <div class="setting-label">最小化到托盘</div>
                       <div class="setting-desc">Keep running in background</div>
                     </div>
                     <el-switch v-model="settings.minimizeToTray" />
@@ -111,7 +111,7 @@
               <div class="settings-card">
                 <div class="card-header">
                   <div class="header-icon">🛡️</div>
-                  <div class="header-title">Risk Control</div>
+                  <div class="header-title">风控设置</div>
                 </div>
                 <div class="card-body">
                   <div class="setting-item vertical">

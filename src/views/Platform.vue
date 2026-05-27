@@ -30,27 +30,27 @@
         >
           <el-menu-item index="/" class="menu-item">
             <el-icon class="menu-icon"><DataAnalysis /></el-icon>
-            <span>Dashboard</span>
+            <span>仪表盘</span>
           </el-menu-item>
           <el-menu-item index="/platform" class="menu-item">
             <el-icon class="menu-icon"><Monitor /></el-icon>
-            <span>Platforms</span>
+            <span>平台管理</span>
           </el-menu-item>
           <el-menu-item index="/script" class="menu-item">
             <el-icon class="menu-icon"><ChatDotRound /></el-icon>
-            <span>Scripts</span>
+            <span>话术库</span>
           </el-menu-item>
           <el-menu-item index="/risk" class="menu-item">
             <el-icon class="menu-icon"><Shield /></el-icon>
-            <span>Risk Control</span>
+            <span>风控设置</span>
           </el-menu-item>
           <el-menu-item index="/stats" class="menu-item">
             <el-icon class="menu-icon"><DataLine /></el-icon>
-            <span>Analytics</span>
+            <span>数据分析</span>
           </el-menu-item>
           <el-menu-item index="/settings" class="menu-item">
             <el-icon class="menu-icon"><Setting /></el-icon>
-            <span>Settings</span>
+            <span>系统设置</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
@@ -60,7 +60,7 @@
         <el-header class="glass-header">
           <div class="header-left">
             <h2 class="page-title">
-              <span class="title-highlight">Platform</span>
+              <span class="title-highlight">平台</span>
               <span class="title-sub">Adapter</span>
               <span class="title-divider"></span>
             </h2>
@@ -68,13 +68,13 @@
           <div class="header-right">
             <el-button type="primary" class="tech-btn-glow" @click="showAddRoom = true">
               <el-icon><Plus /></el-icon>
-              Add Room
+              添加房间
             </el-button>
           </div>
         </el-header>
 
         <el-main class="main-content">
-          <!-- Platform Stats -->
+          <!-- 平台 Stats -->
           <el-row :gutter="20" class="stats-row">
             <el-col :xs="24" :sm="12" :md="8">
               <div class="platform-stat-card">
@@ -87,7 +87,7 @@
                   </div>
                 </div>
                 <div class="stat-bar">
-                  <div class="bar-fill" :style="{ width: getPlatformPercent('taobao') + '%' }"></div>
+                  <div class="bar-fill" :style="{ width: get平台Percent('taobao') + '%' }"></div>
                 </div>
               </div>
             </el-col>
@@ -102,7 +102,7 @@
                   </div>
                 </div>
                 <div class="stat-bar">
-                  <div class="bar-fill orange" :style="{ width: getPlatformPercent('pinduoduo') + '%' }"></div>
+                  <div class="bar-fill orange" :style="{ width: get平台Percent('pinduoduo') + '%' }"></div>
                 </div>
               </div>
             </el-col>
@@ -117,7 +117,7 @@
                   </div>
                 </div>
                 <div class="stat-bar">
-                  <div class="bar-fill purple" :style="{ width: getPlatformPercent('douyin') + '%' }"></div>
+                  <div class="bar-fill purple" :style="{ width: get平台Percent('douyin') + '%' }"></div>
                 </div>
               </div>
             </el-col>
@@ -132,7 +132,7 @@
             <div class="section-actions">
               <el-input
                 v-model="searchQuery"
-                placeholder="Search rooms..."
+                placeholder="搜索房间..."
                 class="tech-search"
                 clearable
               >
@@ -140,8 +140,8 @@
                   <el-icon><Search /></el-icon>
                 </template>
               </el-input>
-              <el-select v-model="filterPlatform" placeholder="Platform" class="tech-select">
-                <el-option label="All Platforms" value="" />
+              <el-select v-model="filter平台" placeholder="平台" class="tech-select">
+                <el-option label="All 平台管理" value="" />
                 <el-option label="Taobao" value="taobao" />
                 <el-option label="Pinduoduo" value="pinduoduo" />
                 <el-option label="Douyin" value="douyin" />
@@ -155,8 +155,8 @@
               <div class="card-glow"></div>
               <div class="room-header">
                 <div class="platform-badge" :class="room.platform">
-                  <img :src="getPlatformIcon(room.platform)" class="platform-icon" />
-                  <span class="platform-name">{{ getPlatformName(room.platform) }}</span>
+                  <img :src="get平台Icon(room.platform)" class="platform-icon" />
+                  <span class="platform-name">{{ get平台Name(room.platform) }}</span>
                 </div>
                 <div class="room-status-badge" :class="room.status">
                   <span class="status-dot"></span>
@@ -198,13 +198,13 @@
               </div>
             </div>
 
-            <!-- Add Room Card -->
+            <!-- 添加房间 Card -->
             <div class="room-card add-card" @click="showAddRoom = true">
               <div class="add-content">
                 <div class="add-icon">
                   <el-icon><Plus /></el-icon>
                 </div>
-                <div class="add-text">Add New Room</div>
+                <div class="add-text">添加新房间</div>
               </div>
             </div>
           </div>
@@ -212,16 +212,16 @@
       </el-container>
     </el-container>
 
-    <!-- Add/Edit Room Dialog -->
+    <!-- Add/编辑房间 Dialog -->
     <el-dialog
       v-model="showAddRoom"
-      :title="editingRoom ? 'Edit Room' : 'Add Room'"
+      :title="editingRoom ? '编辑房间' : '添加房间'"
       width="500px"
       class="tech-dialog"
       :close-on-click-modal="false"
     >
       <el-form :model="roomForm" label-width="100px" class="tech-form">
-        <el-form-item label="Platform">
+        <el-form-item label="平台">
           <el-select v-model="roomForm.platform" class="tech-select-full">
             <el-option label="Taobao Live" value="taobao">
               <span style="margin-right: 8px">🛒</span> Taobao Live
@@ -253,8 +253,8 @@
       </el-form>
       
       <template #footer>
-        <el-button @click="showAddRoom = false" class="tech-btn-secondary">Cancel</el-button>
-        <el-button type="primary" @click="saveRoom" class="tech-btn">Save</el-button>
+        <el-button @click="showAddRoom = false" class="tech-btn-secondary">取消</el-button>
+        <el-button type="primary" @click="saveRoom" class="tech-btn">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -279,7 +279,7 @@ const rooms = ref<Room[]>([])
 const showAddRoom = ref(false)
 const editingRoom = ref<Room | null>(null)
 const searchQuery = ref('')
-const filterPlatform = ref('')
+const filter平台 = ref('')
 
 const roomForm = reactive({
   platform: 'taobao',
@@ -305,17 +305,17 @@ const filteredRooms = computed(() => {
     const matchSearch = !searchQuery.value || 
       room.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       room.room_id.includes(searchQuery.value)
-    const matchPlatform = !filterPlatform.value || room.platform === filterPlatform.value
-    return matchSearch && matchPlatform
+    const match平台 = !filter平台.value || room.platform === filter平台.value
+    return matchSearch && match平台
   })
 })
 
-function getPlatformPercent(platform: string): number {
+function get平台Percent(platform: string): number {
   if (totalRooms.value === 0) return 0
   return (platformStats.value[platform as keyof typeof platformStats.value] / totalRooms.value) * 100
 }
 
-function getPlatformIcon(platform: string): string {
+function get平台Icon(platform: string): string {
   const icons: Record<string, string> = {
     taobao: 'https://img.alicdn.com/tfs/TB1Ly5oS3HqK1RjSZFPXXcwapXa-32-32.png',
     pinduoduo: 'https://cdn.pinduoduo.com/upload/home/img/common/pdd_logo.png',
@@ -325,7 +325,7 @@ function getPlatformIcon(platform: string): string {
   return icons[platform] || '/default-icon.png'
 }
 
-function getPlatformName(platform: string): string {
+function get平台Name(platform: string): string {
   const names: Record<string, string> = {
     taobao: 'Taobao',
     pinduoduo: 'PDD',
@@ -370,14 +370,14 @@ function editRoom(room: Room) {
 
 async function deleteRoom(id: string) {
   try {
-    await ElMessageBox.confirm('Are you sure you want to delete this room?', 'Confirm', {
+    await ElMessageBox.confirm('确定要删除这个房间吗？', '确认', {
       type: 'warning'
     })
     await window.windv.room.delete(id)
     ElMessage.success('Room deleted')
     loadRooms()
   } catch (error) {
-    // Cancelled
+    // 取消led
   }
 }
 
@@ -396,7 +396,7 @@ async function saveRoom() {
     resetForm()
     loadRooms()
   } catch (error) {
-    ElMessage.error('Save failed')
+    ElMessage.error('保存 failed')
   }
 }
 
