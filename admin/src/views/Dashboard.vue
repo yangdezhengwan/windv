@@ -200,25 +200,38 @@ const handleLogout = () => {
 .dashboard {
   display: flex;
   min-height: 100vh;
-  background: #0a0a1a;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  position: relative;
+}
+
+.dashboard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.1) 0%, transparent 40%);
+  pointer-events: none;
 }
 
 /* 侧边栏 */
 .sidebar {
   width: 260px;
-  background: rgba(20, 20, 40, 0.95);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(26, 26, 46, 0.98) 0%, rgba(15, 15, 30, 0.99) 100%);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
+  z-index: 100;
 }
 
 .sidebar-header {
   padding: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .logo {
@@ -228,14 +241,15 @@ const handleLogout = () => {
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #00d4ff, #7c3aed);
-  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #00d4ff 0%, #0072ff 100%);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
 }
 
 .logo-icon svg {
@@ -244,10 +258,12 @@ const handleLogout = () => {
 }
 
 .logo-text {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
-  background: linear-gradient(135deg, #fff, #00d4ff);
+  background: linear-gradient(135deg, #ffffff 0%, #00d4ff 100%);
   -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
   -webkit-text-fill-color: transparent;
 }
 
@@ -346,7 +362,7 @@ const handleLogout = () => {
 .main-content {
   flex: 1;
   margin-left: 260px;
-  padding: 24px;
+  padding: 28px 32px;
 }
 
 .top-bar {
@@ -354,17 +370,23 @@ const handleLogout = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 32px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(22, 33, 62, 0.9));
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .page-title h1 {
   font-size: 28px;
   font-weight: 600;
   color: #fff;
-  margin: 0 0 4px;
+  margin: 0 0 6px;
+  text-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
 }
 
 .page-title p {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
 }
 
@@ -413,16 +435,23 @@ const handleLogout = () => {
 }
 
 .stat-card {
-  background: rgba(30, 30, 60, 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(30, 30, 60, 0.9) 0%, rgba(20, 20, 45, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
   padding: 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 212, 255, 0.15);
+  border-color: rgba(0, 212, 255, 0.3);
 }
 
 .stat-card::before {
@@ -432,11 +461,12 @@ const handleLogout = () => {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #00d4ff, #7c3aed);
+  background: linear-gradient(90deg, #00d4ff, #0072ff, #7c3aed);
 }
 
 .stat-icon {
-  font-size: 32px;
+  font-size: 36px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
 .stat-info {
@@ -446,20 +476,23 @@ const handleLogout = () => {
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .stat-label {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
+  margin-top: 4px;
 }
 
 .stat-trend {
   font-size: 13px;
-  padding: 4px 10px;
-  border-radius: 20px;
+  padding: 6px 14px;
+  border-radius: 24px;
+  font-weight: 500;
 }
 
 .stat-trend.up {

@@ -1,97 +1,50 @@
-/* 小狐狸 管理后台 样式 */
+/* 小狐狸 管理后台 - 主样式 */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* 导入统一主题 */
+@import './admin-theme.scss';
 
+/* 额外的自定义样式 */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #0a0a1a;
-  color: #fff;
-  min-height: 100vh;
+  overflow-x: hidden;
 }
 
-#app {
-  min-height: 100vh;
+/* 加载动画 */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 212, 255, 0.1);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-/* 通用样式 */
-.glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 20px;
-  backdrop-filter: blur(10px);
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-/* 按钮样式 */
-.tech-btn {
-  background: linear-gradient(135deg, #00d4ff 0%, #0096ff 100%);
-  border: none;
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
+/* 过渡效果 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 页面切换动画 */
+.page-enter-active,
+.page-leave-active {
   transition: all 0.3s;
 }
 
-.tech-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+.page-enter-from {
+  opacity: 0;
+  transform: translateX(20px);
 }
 
-/* Element Plus 覆盖 */
-.el-table {
-  --el-table-bg-color: transparent;
-  --el-table-tr-bg-color: transparent;
-  --el-table-header-bg-color: rgba(0, 212, 255, 0.1);
-  --el-table-row-hover-bg-color: rgba(0, 212, 255, 0.05);
-}
-
-.el-dialog {
-  --el-dialog-bg-color: #1a1a2e;
-  border-radius: 12px;
-}
-
-.el-input {
-  --el-input-bg-color: rgba(255, 255, 255, 0.05);
-  --el-input-border-color: rgba(255, 255, 255, 0.1);
-}
-
-.el-select {
-  --el-select-border-color-hover: #00d4ff;
-}
-
-/* 背景动画 */
-.bg-animation {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.bg-grid {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-}
-
-.bg-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+.page-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
 }
