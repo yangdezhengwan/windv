@@ -361,6 +361,37 @@ function initDefaultData(): void {
 }
 
 /**
+ * 获取设置值
+ */
+export function getSettings(key: string): string | null {
+  try {
+    const database = getDatabase()
+    const row = database.prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined
+    return row?.value ?? null
+  } catch (error) {
+    console.error('获取设置失败:', error)
+    return null
+  }
+}
+
+/**
+ * 设置设置值
+ */
+export function setSettings(key: string, value: string): boolean {
+  try {
+    const database = getDatabase()
+    database.prepare(`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    `).run(key, value)
+    return true
+  } catch (error) {
+    console.error('保存设置失败:', error)
+    return false
+  }
+}
+/**
  * 关闭数据库
  */
 export function closeDatabase(): void {
