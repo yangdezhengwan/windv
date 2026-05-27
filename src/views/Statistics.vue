@@ -2,7 +2,7 @@
   <div class="stats-page">
     <el-container>
       <el-aside width="200px">
-        <div class="logo"><span class="logo-icon">📺</span><span class="logo-text">无人直播助手</span></div>
+        <div class="logo"><span class="logo-icon">📺</span><span class="logo-text">小狐狸</span></div>
         <el-menu :default-active="$route.path" :router="true" background-color="#1a1a2e" text-color="#fff" active-text-color="#409EFF">
           <el-menu-item index="/"><el-icon><DataAnalysis /></el-icon><span>仪表盘</span></el-menu-item>
           <el-menu-item index="/platform"><el-icon><Monitor /></el-icon><span>平台适配</span></el-menu-item>
@@ -58,6 +58,27 @@
         </el-main>
       </el-container>
     </el-container>
+    
+    <!-- 详情弹窗 -->
+    <el-dialog v-model="detailVisible" title="数据详情" width="600px">
+      <div v-if="detailData" class="detail-content">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="日期">{{ detailData.date }}</el-descriptions-item>
+          <el-descriptions-item label="弹幕总数">{{ detailData.danmaku_count }}</el-descriptions-item>
+          <el-descriptions-item label="回复总数">{{ detailData.reply_count }}</el-descriptions-item>
+          <el-descriptions-item label="回复成功">{{ detailData.reply_success_count || 0 }}</el-descriptions-item>
+          <el-descriptions-item label="回复率">{{ detailData.reply_count > 0 ? Math.round(detailData.reply_success_count / detailData.reply_count * 100) + '%' : '0%' }}</el-descriptions-item>
+          <el-descriptions-item label="新订单">{{ detailData.order_new_count || 0 }}</el-descriptions-item>
+        </el-descriptions>
+        
+        <h4 style="margin-top: 20px; color: #fff;">意图分布</h4>
+        <div v-if="detailData.top_intents">
+          <el-tag v-for="intent in JSON.parse(detailData.top_intents)" :key="intent.type" style="margin-right: 10px; margin-bottom: 10px;" type="info">
+            {{ getIntentName(intent.type) }}: {{ intent.count }}
+          </el-tag>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -69,6 +90,8 @@ import * as echarts from 'echarts'
 const historyStats = ref<any[]>([])
 const intentChartRef = ref<HTMLElement | null>(null)
 const trendChartRef = ref<HTMLElement | null>(null)
+const detailVisible = ref(false)
+const detailData = ref<any>(null)
 
 async function loadData() {
   const endDate = new Date().toISOString().split('T')[0]
@@ -125,7 +148,21 @@ async function exportData() {
 }
 
 function viewDetail(row: any) {
-  // TODO: 显示详情
+  detailData.value = row
+  detailVisible.value = true
+}
+
+function getIntentName(type: string): string {
+  const names: Record<string, string> = {
+    'chat': '弹幕',
+    'price': '价格',
+    'logistics': '物流',
+    'aftersale': '售后',
+    'size': '尺码',
+    'discount': '优惠',
+    'ad': '广告'
+  }
+  return names[type] || type
 }
 
 onMounted(loadData)

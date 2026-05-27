@@ -4,7 +4,7 @@
       <el-aside width="200px">
         <div class="logo">
           <span class="logo-icon">📺</span>
-          <span class="logo-text">无人直播助手</span>
+          <span class="logo-text">小狐狸</span>
         </div>
         <el-menu :default-active="$route.path" :router="true" background-color="#1a1a2e" text-color="#fff" active-text-color="#409EFF">
           <el-menu-item index="/"><el-icon><DataAnalysis /></el-icon><span>仪表盘</span></el-menu-item>
@@ -131,13 +131,52 @@ async function saveSettings() {
 }
 
 function addWord() {
-  if (!newWord.value.trim()) return
-  // TODO: 实现添加违禁词
+  if (!newWord.value.trim()) {
+    ElMessage.warning('请输入违禁词')
+    return
+  }
+  
+  // 检查是否已存在
+  const exists = sensitiveWords.value.some(w => w.word === newWord.value.trim())
+  if (exists) {
+    ElMessage.warning('该违禁词已存在')
+    return
+  }
+  
+  // 添加新违禁词
+  const newWordObj = { id: Date.now().toString(), word: newWord.value.trim() }
+  sensitiveWords.value.push(newWordObj)
+  
+  // 保存到设置
+  saveSensitiveWords()
   newWord.value = ''
+  ElMessage.success('违禁词已添加')
 }
 
 function removeWord(id: string) {
-  // TODO: 实现删除违禁词
+  sensitiveWords.value = sensitiveWords.value.filter(w => w.id !== id)
+  saveSensitiveWords()
+  ElMessage.success('违禁词已删除')
+}
+
+async function saveSensitiveWords() {
+  const words = sensitiveWords.value.map(w => w.word)
+  await window.windv.settings.set('sensitive_words', JSON.stringify(words))
+}
+
+async function loadSensitiveWords() {
+  const saved = await window.windv.settings.get('sensitive_words')
+  if (saved) {
+    try {
+      const words = JSON.parse(saved)
+      sensitiveWords.value = words.map((word: string, index: number) => ({ 
+        id: (index + 1).toString(), 
+        word 
+      }))
+    } catch {
+      sensitiveWords.value = []
+    }
+  }
 }
 
 async function loadRooms() {
@@ -146,6 +185,7 @@ async function loadRooms() {
 
 onMounted(() => {
   loadSettings()
+  loadSensitiveWords()
   loadRooms()
 })
 </script>
