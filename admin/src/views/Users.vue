@@ -618,12 +618,13 @@ onMounted(() => {
 
 .table-container :deep(.el-table th.el-table__cell) {
   background: rgba(0, 212, 255, 0.08);
-  color: #00d4ff;
+  color: #ffffff;
   font-weight: 600;
 }
 
 .table-container :deep(.el-table td.el-table__cell) {
-  color: rgba(255, 255, 255, 0.8);
+  color: #ffffff;
+  background: rgba(30, 30, 60, 0.3);
 }
 
 /* 用户单元格 */
