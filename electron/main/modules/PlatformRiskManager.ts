@@ -97,7 +97,7 @@ export class PlatformRiskManager {
       const db = getDatabase()
       const rows = db.prepare('SELECT * FROM platform_risk_config WHERE is_active = 1').all()
       
-      for (const row of rows) {
+      for (const row of rows as any[]) {
         this.configs.set(row.platform, {
           platform: row.platform,
           maxPerMinute: row.max_per_minute,
@@ -271,4 +271,4 @@ export class PlatformRiskManager {
   }
 }
 
-module.exports = { PlatformRiskManager, DEFAULT_PLATFORM_RISK_CONFIG }
+module.exports = { PlatformRiskManager, DEFAULT_PLATFORM_RISK }

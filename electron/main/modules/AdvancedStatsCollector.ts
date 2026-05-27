@@ -158,8 +158,8 @@ export class AdvancedStatsCollector {
           replyCount: found?.reply_count || 0,
           orderCount: 0, // 需要统计订单
           replyRate: found?.danmaku_count > 0 
-            ? (found.reply_count / found.danmaku_count * 100).toFixed(2) 
-            : '0',
+            ? Math.round(found.reply_count / found.danmaku_count * 100) 
+            : 0,
         })
       }
       

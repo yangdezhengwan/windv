@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
@@ -31,7 +32,7 @@ const userSchema = new Schema({
   },
   deviceId: [{
     type: String,
-  }], // 绑定的设备ID
+  }],
   lastLoginAt: {
     type: Date,
     default: Date.now,
@@ -63,6 +64,11 @@ userSchema.pre('save', function(next) {
   next();
 });
 
+// 密码比对方法
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
 // 虚拟字段：移除敏感信息
 userSchema.methods.toJSON = function() {
   const obj = this.toObject();
@@ -71,4 +77,6 @@ userSchema.methods.toJSON = function() {
   return obj;
 };
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+
+module.exports = { User };

@@ -8,6 +8,19 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
+const multer = require('multer');
+const mongoose = require('mongoose');
+
+// 数据库连接
+const DB_URI = process.env.DB_CONNECTION_STRING || 'mongodb://localhost:27017/windv';
+console.log('连接数据库:', DB_URI);
+
+mongoose.connect(DB_URI)
+  .then(() => console.log('MongoDB 连接成功'))
+  .catch(err => {
+    console.error('MongoDB 连接失败:', err);
+    process.exit(1);
+  });
 
 // 路由
 const authRoutes = require('./routes/auth');
@@ -60,7 +73,7 @@ const upload = require('multer')({
 
 // 日志中间件
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.path}`);
+  console.log(req.method, req.path);
   next();
 });
 
@@ -91,26 +104,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 静态文件（管理后台）
-const adminDistPath = path.join(__dirname, '../admin/dist');
-if (fs.existsSync(adminDistPath)) {
-  app.use(express.static(adminDistPath));
-} else {
-  logger.warn('管理后台前端未构建，请先运行: cd admin && npm run build');
-}
-
-// SPA 路由支持（所有未匹配的 API 返回 404，页面路由返回 index.html）
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api/')) {
-    res.status(404).json({ error: 'API 路由不存在' });
-  } else {
-    res.sendFile(path.join(adminDistPath, 'index.html'));
-  }
-});
-
 // 404 处理
 app.use((req, res) => {
-  res.status(404).json({ error: '资源不存在' });
+  res.status(404).json({ error: 'API 路由不存在' });
 });
 
 // 全局错误处理
@@ -122,36 +118,33 @@ const server = http.createServer(app);
 const PORT_NUMBER = parseInt(PORT, 10);
 
 server.listen(PORT_NUMBER, '0.0.0.0', () => {
-  logger.info(`🚀 服务器启动成功`);
-  logger.info(`📊 监听端口: ${PORT_NUMBER}`);
-  logger.info(`🔗 访问地址: http://localhost:${PORT_NUMBER}`);
-  logger.info(`🌐 管理后台: http://localhost:${PORT_NUMBER}`);
-  logger.info(`📡 API 基础地址: http://localhost:${PORT_NUMBER}/api`);
+  console.log('WindV 服务器启动成功!');
+  console.log('监听端口:', PORT_NUMBER);
+  console.log('访问地址: http://localhost:' + PORT_NUMBER);
   
-  // PM2 集成
-  if (process.env.NODE_ENV === 'production') {
-    require('@pm2/io').push({
-      name: 'windv-server',
-      script: './src/server.js',
-    });
-    
-    logger.info('PM2 模式启动');
-  }
+  // PM2 集成 (可选)
+  // require('@pm2/io').push({
+  //   name: 'windv-server',
+  //   script: './src/server.js',
+  // });
+  // logger.info('PM2 模式启动');
 });
 
 // 优雅关闭
 process.on('SIGTERM', () => {
-  logger.info('收到 SIGTERM 信号，正在关闭服务器...');
+  console.log('收到关闭信号，正在关闭服务器...');
+  mongoose.disconnect();
   server.close(() => {
-    logger.info('服务器已关闭');
+    console.log('服务器已关闭');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  logger.info('收到 SIGINT 信号，正在关闭服务器...');
+  console.log('收到关闭信号，正在关闭服务器...');
+  mongoose.disconnect();
   server.close(() => {
-    logger.info('服务器已关闭');
+    console.log('服务器已关闭');
     process.exit(0);
   });
 });
