@@ -14,7 +14,20 @@
       </el-aside>
 
       <el-container>
-        <el-header><h2>数据报表</h2></el-header>
+        <el-header>
+          <h2>数据报表</h2>
+          <div class="date-range">
+            <el-date-picker
+              v-model="dateRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              @change="loadData"
+            />
+            <el-button type="primary" @click="loadData">刷新</el-button>
+          </div>
+        </el-header>
         <el-main>
           <el-row :gutter="20">
             <el-col :span="12">
@@ -27,6 +40,51 @@
               <el-card class="chart-card">
                 <template #header><span>每日数据趋势</span></template>
                 <div ref="trendChartRef" style="height: 300px;"></div>
+              </el-card>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20" style="margin-top: 20px;">
+            <el-col :span="12">
+              <el-card class="chart-card">
+                <template #header><span>高频问题 TOP 10</span></template>
+                <div ref="topQuestionsChartRef" style="height: 300px;"></div>
+              </el-card>
+            </el-col>
+            <el-col :span="12">
+              <el-card class="chart-card">
+                <template #header><span>活跃时段分析</span></template>
+                <div ref="activityChartRef" style="height: 300px;"></div>
+              </el-card>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20" style="margin-top: 20px;">
+            <el-col :span="12">
+              <el-card class="chart-card">
+                <template #header><span>转化率漏斗</span></template>
+                <div ref="funnelChartRef" style="height: 300px;"></div>
+              </el-card>
+            </el-col>
+            <el-col :span="12">
+              <el-card class="chart-card">
+                <template #header><span>数据对比</span></template>
+                <div class="compare-info">
+                  <div class="compare-item">
+                    <span class="label">今日弹幕</span>
+                    <span class="value">{{ compareStats.todayDanmaku }}</span>
+                  </div>
+                  <div class="compare-item">
+                    <span class="label">昨日弹幕</span>
+                    <span class="value">{{ compareStats.yesterdayDanmaku }}</span>
+                  </div>
+                  <div class="compare-item">
+                    <span class="label">变化</span>
+                    <span class="value" :class="compareStats.change >= 0 ? 'up' : 'down'">
+                      {{ compareStats.change >= 0 ? '+' : '' }}{{ compareStats.change }}%
+                    </span>
+                  </div>
+                </div>
               </el-card>
             </el-col>
           </el-row>
@@ -83,25 +141,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 
 const historyStats = ref<any[]>([])
 const intentChartRef = ref<HTMLElement | null>(null)
 const trendChartRef = ref<HTMLElement | null>(null)
+const topQuestionsChartRef = ref<HTMLElement | null>(null)
+const activityChartRef = ref<HTMLElement | null>(null)
+const funnelChartRef = ref<HTMLElement | null>(null)
+const dateRange = ref<[Date, Date]>([
+  new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+  new Date()
+])
+
+const compareStats = reactive({
+  todayDanmaku: 0,
+  yesterdayDanmaku: 0,
+  change: 0
+})
+
 const detailVisible = ref(false)
 const detailData = ref<any>(null)
 
 async function loadData() {
-  const endDate = new Date().toISOString().split('T')[0]
-  const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  // 使用日期范围或默认最近7天
+  let startDate: string, endDate: string
+  
+  if (dateRange.value && dateRange.value.length === 2) {
+    startDate = dateRange.value[0].toISOString().split('T')[0]
+    endDate = dateRange.value[1].toISOString().split('T')[0]
+  } else {
+    endDate = new Date().toISOString().split('T')[0]
+    startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  }
   
   historyStats.value = await window.windv.stats.getHistory({ startDate, endDate })
   
-  // 更新图表
+  // 更新所有图表
   updateIntentChart()
   updateTrendChart()
+  updateTopQuestionsChart()
+  updateActivityChart()
+  updateFunnelChart()
+  updateCompareStats()
 }
 
 function updateIntentChart() {
@@ -111,12 +195,23 @@ function updateIntentChart() {
   const intentData = historyStats.value[0]?.top_intents ? JSON.parse(historyStats.value[0].top_intents) : []
   
   chart.setOption({
-    tooltip: {},
+    tooltip: { trigger: 'item' },
+    legend: { orient: 'vertical', left: 'left', textStyle: { color: '#fff' } },
     series: [{
       type: 'pie',
       radius: '60%',
-      data: intentData.map((item: any) => ({ name: item.type, value: item.count })),
-      label: { color: '#fff' }
+      data: intentData.map((item: any) => ({ 
+        name: getIntentName(item.type), 
+        value: item.count 
+      })),
+      label: { color: '#fff' },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+      }
     }]
   })
 }
@@ -136,6 +231,210 @@ function updateTrendChart() {
       { name: '回复', type: 'line', data: historyStats.value.map(s => s.reply_count) }
     ]
   })
+}
+
+// 高频问题 TOP 10
+async function updateTopQuestionsChart() {
+  if (!topQuestionsChartRef.value) return
+  
+  const chart = echarts.init(topQuestionsChartRef.value)
+  
+  try {
+    let startDate: string, endDate: string
+    if (dateRange.value && dateRange.value.length === 2) {
+      startDate = dateRange.value[0].toISOString().split('T')[0]
+      endDate = dateRange.value[1].toISOString().split('T')[0]
+    } else {
+      endDate = new Date().toISOString().split('T')[0]
+      startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    }
+    
+    const questions = await window.windv.stats.getHighFrequency({ startDate, endDate, limit: 10 })
+    
+    chart.setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      xAxis: { 
+        type: 'category', 
+        data: questions.map(q => Array.isArray(q.keywords) ? q.keywords[0] : q.keywords),
+        axisLabel: { color: '#fff', rotate: 30 }
+      },
+      yAxis: { type: 'value', axisLabel: { color: '#fff' } },
+      series: [{
+        type: 'bar',
+        data: questions.map(q => q.count),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#00d4ff' },
+            { offset: 1, color: '#0072ff' }
+          ]),
+          borderRadius: [5, 5, 0, 0]
+        }
+      }]
+    })
+  } catch (error) {
+    console.error('获取高频问题失败:', error)
+    chart.setOption({
+      title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#666' } }
+    })
+  }
+}
+
+// 活跃时段分析
+async function updateActivityChart() {
+  if (!activityChartRef.value) return
+  
+  const chart = echarts.init(activityChartRef.value)
+  
+  try {
+    let startDate: string, endDate: string
+    if (dateRange.value && dateRange.value.length === 2) {
+      startDate = dateRange.value[0].toISOString().split('T')[0]
+      endDate = dateRange.value[1].toISOString().split('T')[0]
+    } else {
+      endDate = new Date().toISOString().split('T')[0]
+      startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    }
+    
+    const hoursData = await window.windv.stats.getActivityHours({ startDate, endDate })
+    
+    // 填充 0-23 小时的完整数据
+    const hours = Array.from({ length: 24 }, (_, i) => `${i}:00`)
+    const activityMap: Record<number, number> = {}
+    hoursData.forEach((item: any) => {
+      activityMap[parseInt(item.hour)] = item.danmaku_count
+    })
+    const activity = hours.map((_, i) => activityMap[i] || 0)
+    
+    // 找出高峰时段（超过平均值的时间段）
+    const avg = activity.reduce((a, b) => a + b, 0) / 24
+    
+    chart.setOption({
+      tooltip: { trigger: 'axis' },
+      grid: { left: '3%', right: '4%', bottom: '3%', top: '3%', containLabel: true },
+      xAxis: { type: 'category', data: hours, axisLabel: { color: '#aaa' } },
+      yAxis: { type: 'value', axisLabel: { color: '#aaa' } },
+      series: [{
+        type: 'bar',
+        data: activity,
+        itemStyle: {
+          color: (params: any) => {
+            const value = params.value as number
+            // 高于平均值的时段用渐变色
+            if (value > avg * 1.5) {
+              return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#ff6b6b' },
+                { offset: 1, color: '#ee5a5a' }
+              ])
+            } else if (value > avg) {
+              return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#ffd93d' },
+                { offset: 1, color: '#ffb830' }
+              ])
+            }
+            return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#00d4ff' },
+              { offset: 1, color: '#0072ff' }
+            ])
+          }
+        }
+      }]
+    })
+  } catch (error) {
+    console.error('获取活跃时段失败:', error)
+    chart.setOption({
+      title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#666' } }
+    })
+  }
+}
+
+// 转化率漏斗图
+async function updateFunnelChart() {
+  if (!funnelChartRef.value) return
+  
+  const chart = echarts.init(funnelChartRef.value)
+  
+  try {
+    let startDate: string, endDate: string
+    if (dateRange.value && dateRange.value.length === 2) {
+      startDate = dateRange.value[0].toISOString().split('T')[0]
+      endDate = dateRange.value[1].toISOString().split('T')[0]
+    } else {
+      endDate = new Date().toISOString().split('T')[0]
+      startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    }
+    
+    const funnelData = await window.windv.stats.getConversionFunnel({ startDate, endDate })
+    
+    // 计算转化率（以弹幕总数为基准）
+    const total = funnelData.danmaku_total || 1
+    const data = [
+      { name: '弹幕总数', value: funnelData.danmaku_total || 0, rate: 100 },
+      { name: '意图识别', value: funnelData.intent_matched || 0, rate: Math.round((funnelData.intent_matched || 0) / total * 100) },
+      { name: '自动回复', value: funnelData.reply_total || 0, rate: Math.round((funnelData.reply_total || 0) / total * 100) },
+      { name: '回复成功', value: funnelData.reply_success || 0, rate: Math.round((funnelData.reply_success || 0) / total * 100) },
+      { name: '成交订单', value: funnelData.order_count || 0, rate: Math.round((funnelData.order_count || 0) / total * 100) }
+    ]
+    
+    const colors = ['#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534']
+    
+    chart.setOption({
+      tooltip: { 
+        trigger: 'item', 
+        formatter: (params: any) => `${params.name}: ${params.value} (${params.data.rate}%)`
+      },
+      series: [{
+        type: 'funnel',
+        left: '10%',
+        top: 60,
+        bottom: 60,
+        width: '80%',
+        minSize: '0%',
+        maxSize: '100%',
+        sort: 'descending',
+        gap: 2,
+        label: {
+          show: true,
+          position: 'inside',
+          color: '#fff',
+          formatter: (params: any) => `${params.name}\n${params.value} (${params.data.rate}%)`
+        },
+        labelLine: {
+          length: 10,
+          lineStyle: { width: 1, color: '#fff' }
+        },
+        itemStyle: {
+          borderColor: '#fff',
+          borderWidth: 1
+        },
+        data: data.map((item, index) => ({
+          value: item.value,
+          name: item.name,
+          rate: item.rate,
+          itemStyle: {
+            color: colors[index]
+          }
+        }))
+      }]
+    })
+  } catch (error) {
+    console.error('获取转化率漏斗失败:', error)
+    chart.setOption({
+      title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#666' } }
+    })
+  }
+}
+
+// 数据对比
+function updateCompareStats() {
+  if (historyStats.value.length >= 2) {
+    const today = historyStats.value[0]?.danmaku_count || 0
+    const yesterday = historyStats.value[1]?.danmaku_count || 0
+    const change = today > 0 ? Math.round((today - yesterday) / yesterday * 100) : 0
+    
+    compareStats.todayDanmaku = today
+    compareStats.yesterdayDanmaku = yesterday
+    compareStats.change = change
+  }
 }
 
 async function exportData() {

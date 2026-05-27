@@ -217,6 +217,45 @@
                   </div>
                 </div>
               </div>
+              
+              <!-- 云端同步设置 -->
+              <div class="settings-card">
+                <div class="card-header">
+                  <div class="header-icon">☁️</div>
+                  <div class="header-title">云端同步</div>
+                </div>
+                <div class="card-body">
+                  <div class="setting-item">
+                    <div class="setting-info">
+                      <div class="setting-label">启用云端同步</div>
+                      <div class="setting-desc">多设备间同步话术和数据</div>
+                    </div>
+                    <el-switch v-model="syncConfig.enabled" @change="toggleSync" />
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-info">
+                      <div class="setting-label">自动同步</div>
+                      <div class="setting-desc">每隔 {{ syncConfig.interval }} 分钟自动同步</div>
+                    </div>
+                    <el-slider v-model="syncConfig.interval" :min="5" :max="60" :step="5" style="width: 120px;" />
+                  </div>
+                  <div class="sync-status">
+                    <div class="sync-info">
+                      <span v-if="syncStatus.lastSync">上次同步: {{ formatSyncTime(syncStatus.lastSync) }}</span>
+                      <span v-else>尚未同步</span>
+                    </div>
+                    <div class="sync-info" v-if="syncStatus.pending > 0">
+                      待同步: {{ syncStatus.pending }} 条
+                    </div>
+                  </div>
+                  <div class="sync-actions">
+                    <el-button type="primary" @click="doSync" :loading="syncStatus.isSyncing">
+                      {{ syncStatus.isSyncing ? '同步中...' : '立即同步' }}
+                    </el-button>
+                    <el-button @click="viewSyncLog">同步记录</el-button>
+                  </div>
+                </div>
+              </div>
             </el-col>
 
             <!-- Right Column -->
@@ -291,11 +330,11 @@
                     </el-button>
                     <el-button class="data-btn" @click="createBackup">
                       <el-icon><FolderChecked /></el-icon>
-                      Backup Data
+                      创建备份
                     </el-button>
                     <el-button class="data-btn" @click="restoreBackup">
                       <el-icon><FolderOpened /></el-icon>
-                      Restore Backup
+                      从备份恢复
                     </el-button>
                   </div>
                 </div>
@@ -370,6 +409,19 @@ const ttsConfig = reactive({
   volume: 100
 })
 
+// 云端同步配置
+const syncConfig = reactive({
+  enabled: false,
+  interval: 30
+})
+
+const syncStatus = reactive({
+  lastSync: null as string | null,
+  pending: 0,
+  isSyncing: false,
+  lastError: null as string | null
+})
+
 const version = ref('1.0.0')
 
 async function loadSettings() {
@@ -400,6 +452,10 @@ async function loadSettings() {
     await window.windv.tts.setEnabled(ttsConfig.enabled)
     await window.windv.tts.setRate(ttsConfig.rate)
     await window.windv.tts.setVolume(ttsConfig.volume)
+    
+    // Load sync config
+    syncConfig.enabled = allSettings.syncEnabled === 'true'
+    syncConfig.interval = parseInt(allSettings.syncInterval) || 30
   } catch (error) {
     console.error('Failed to load settings:', error)
   }
@@ -418,7 +474,9 @@ async function saveSettings() {
       window.windv.settings.set('orderConfig', JSON.stringify(orderConfig)),
       window.windv.settings.set('ttsEnabled', String(ttsConfig.enabled)),
       window.windv.settings.set('ttsRate', String(ttsConfig.rate)),
-      window.windv.settings.set('ttsVolume', String(ttsConfig.volume))
+      window.windv.settings.set('ttsVolume', String(ttsConfig.volume)),
+      window.windv.settings.set('syncEnabled', String(syncConfig.enabled)),
+      window.windv.settings.set('syncInterval', String(syncConfig.interval))
     ]
     
     // 更新 TTS 设置到主进程
@@ -440,6 +498,62 @@ async function testTTS() {
   } catch (error) {
     ElMessage.error('语音播报失败')
   }
+}
+
+// 云端同步
+async function loadSyncStatus() {
+  try {
+    const status = await (window.windv as any).cloud?.getSyncStatus?.()
+    if (status) {
+      syncStatus.lastSync = status.lastSyncTime
+      syncStatus.pending = status.pendingChanges || 0
+      syncStatus.isSyncing = status.isSyncing || false
+      syncStatus.lastError = status.lastError
+    }
+  } catch (error) {
+    console.error('加载同步状态失败', error)
+  }
+}
+
+async function doSync() {
+  try {
+    syncStatus.isSyncing = true
+    const result = await (window.windv as any).cloud?.sync?.()
+    if (result?.success) {
+      ElMessage.success('同步成功')
+      syncStatus.lastSync = new Date().toISOString()
+      syncStatus.pending = 0
+    } else {
+      ElMessage.error(result?.message || '同步失败')
+    }
+  } catch (error) {
+    ElMessage.error('同步失败')
+  } finally {
+    syncStatus.isSyncing = false
+  }
+}
+
+async function toggleSync(enabled: boolean) {
+  try {
+    await (window.windv as any).cloud?.setSyncEnabled?.(enabled)
+    if (enabled) {
+      ElMessage.success('云端同步已开启')
+    } else {
+      ElMessage.info('云端同步已关闭')
+    }
+  } catch (error) {
+    ElMessage.error('设置失败')
+  }
+}
+
+function viewSyncLog() {
+  ElMessage.info('同步记录功能开发中')
+}
+
+function formatSyncTime(time: string): string {
+  if (!time) return '-'
+  const date = new Date(time)
+  return date.toLocaleString('zh-CN')
 }
 
 async function exportScripts() {
@@ -511,6 +625,7 @@ function openExternal(url: string) {
 
 onMounted(() => {
   loadSettings()
+  loadSyncStatus()
   window.windv.system.getVersion().then(v => {
     version.value = v
   })
@@ -993,5 +1108,30 @@ kbd {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+// Cloud Sync
+.sync-status {
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  
+  .sync-info {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    margin-bottom: 4px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.sync-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
 }
 </style>

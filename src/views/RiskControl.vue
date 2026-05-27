@@ -80,6 +80,47 @@
               </el-form-item>
             </el-form>
           </el-card>
+          
+          <!-- 平台风控配置 -->
+          <el-card class="settings-card" style="margin-top: 20px;">
+            <template #header>
+              <span>平台风控策略</span>
+              <el-tag type="info" style="margin-left: 10px;">差异化配置</el-tag>
+            </template>
+            <el-table :data="platformRisks" stripe style="width: 100%">
+              <el-table-column prop="name" label="平台" width="150" />
+              <el-table-column label="最小延迟" width="120">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.min_delay" :min="500" :max="5000" :step="100" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="最大延迟" width="120">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.max_delay" :min="1000" :max="10000" :step="100" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="每分钟" width="100">
+                <template #default="{ row }">
+                  <el-input-number v-model="row.max_per_minute" :min="5" :max="60" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="随机延迟" width="100">
+                <template #default="{ row }">
+                  <el-switch v-model="row.random_delay_enabled" :true-value="1" :false-value="0" />
+                </template>
+              </el-table-column>
+              <el-table-column label="敏感词过滤" width="100">
+                <template #default="{ row }">
+                  <el-switch v-model="row.sensitive_filter_enabled" :true-value="1" :false-value="0" />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="100">
+                <template #default="{ row }">
+                  <el-button type="primary" size="small" @click="savePlatformRisk(row)">保存</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
 
           <div class="save-btn">
             <el-button type="primary" size="large" @click="saveSettings">保存设置</el-button>
@@ -107,6 +148,7 @@ const newWord = ref('')
 const rooms = ref<{ id: string; name: string }[]>([])
 const selectedRoom = ref('')
 const rateLimitStats = ref<{ count: number; remaining: number } | null>(null)
+const platformRisks = ref<any[]>([])
 
 async function loadSettings() {
   const all = await window.windv.settings.getAll()
@@ -183,10 +225,34 @@ async function loadRooms() {
   rooms.value = await window.windv.room.list()
 }
 
+async function loadPlatformRisks() {
+  try {
+    platformRisks.value = await (window.windv as any).platformRisk?.list?.() || []
+  } catch (error) {
+    console.error('加载平台风控配置失败', error)
+  }
+}
+
+async function savePlatformRisk(row: any) {
+  try {
+    await (window.windv as any).platformRisk?.update?.(row.platform_code, {
+      min_delay: row.min_delay,
+      max_delay: row.max_delay,
+      max_per_minute: row.max_per_minute,
+      random_delay_enabled: row.random_delay_enabled === 1,
+      sensitive_filter_enabled: row.sensitive_filter_enabled === 1
+    })
+    ElMessage.success('平台风控配置已保存')
+  } catch (error) {
+    ElMessage.error('保存失败')
+  }
+}
+
 onMounted(() => {
   loadSettings()
   loadSensitiveWords()
   loadRooms()
+  loadPlatformRisks()
 })
 </script>
 

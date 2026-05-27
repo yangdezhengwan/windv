@@ -192,6 +192,9 @@
                 <el-button class="action-btn-secondary" @click="editRoom(room)">
                   <el-icon><Edit /></el-icon>
                 </el-button>
+                <el-button class="action-btn" @click="configureRoomScripts(room)" title="话术配置">
+                  <el-icon><ChatDotRound /></el-icon>
+                </el-button>
                 <el-button class="action-btn-danger" @click="deleteRoom(room.id)">
                   <el-icon><Delete /></el-icon>
                 </el-button>
@@ -257,6 +260,76 @@
         <el-button type="primary" @click="saveRoom" class="tech-btn">保存</el-button>
       </template>
     </el-dialog>
+    
+    <!-- 房间话术配置 Dialog -->
+    <el-dialog v-model="showRoomScripts" :title="`话术配置 - ${currentRoom?.name || ''}`" width="800px">
+      <div class="room-scripts-config">
+        <div class="config-header">
+          <span>为当前房间配置专属话术，留空则使用全局话术</span>
+        </div>
+        
+        <el-tabs v-model="scriptTab">
+          <el-tab-pane label="专属话术" name="room">
+            <div class="script-list">
+              <el-table :data="roomScripts" stripe style="width: 100%">
+                <el-table-column prop="keywords" label="关键词" width="150" />
+                <el-table-column prop="responses" label="回复内容" />
+                <el-table-column prop="category_name" label="分类" width="100" />
+                <el-table-column label="优先级" width="80">
+                  <template #default="{ row }">
+                    <el-input-number v-model="row.priority" :min="0" :max="100" size="small" @change="updateRoomScriptPriority(row)" />
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="80">
+                  <template #default="{ row }">
+                    <el-button type="danger" size="small" @click="removeRoomScript(row.id)">移除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-tab-pane>
+          
+          <el-tab-pane label="添加话术" name="add">
+            <div class="add-script-form">
+              <el-form :model="scriptForm" label-width="100px">
+                <el-form-item label="话术分类">
+                  <el-select v-model="scriptForm.categoryId" placeholder="选择分类" style="width: 100%">
+                    <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="关键词">
+                  <el-input v-model="scriptForm.keywords" placeholder="输入关键词，逗号分隔" />
+                </el-form-item>
+                <el-form-item label="回复内容">
+                  <el-input v-model="scriptForm.responses" type="textarea" :rows="3" placeholder="输入回复内容" />
+                </el-form-item>
+                <el-form-item label="优先级">
+                  <el-input-number v-model="scriptForm.priority" :min="0" :max="100" />
+                </el-form-item>
+              </el-form>
+              <div class="form-actions">
+                <el-button type="primary" @click="addRoomScript">添加专属话术</el-button>
+              </div>
+            </div>
+          </el-tab-pane>
+          
+          <el-tab-pane label="全局话术" name="global">
+            <div class="global-scripts">
+              <el-table :data="globalScripts" stripe style="width: 100%">
+                <el-table-column prop="keywords" label="关键词" width="150" />
+                <el-table-column prop="responses" label="回复内容" />
+                <el-table-column prop="category_name" label="分类" width="100" />
+                <el-table-column label="操作" width="100">
+                  <template #default="{ row }">
+                    <el-button type="primary" size="small" @click="addToRoomScripts(row)">添加到房间</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -277,9 +350,23 @@ interface Room {
 
 const rooms = ref<Room[]>([])
 const showAddRoom = ref(false)
+const showRoomScripts = ref(false)
 const editingRoom = ref<Room | null>(null)
+const currentRoom = ref<Room | null>(null)
 const searchQuery = ref('')
 const filter平台 = ref('')
+const scriptTab = ref('room')
+const categories = ref<{ id: string; name: string; color: string }[]>([])
+
+const roomScripts = ref<any[]>([])
+const globalScripts = ref<any[]>([])
+
+const scriptForm = reactive({
+  categoryId: '',
+  keywords: '',
+  responses: '',
+  priority: 0
+})
 
 const roomForm = reactive({
   platform: 'taobao',
@@ -366,6 +453,93 @@ function editRoom(room: Room) {
   roomForm.room_id = room.room_id
   roomForm.stream_url = room.stream_url
   showAddRoom.value = true
+}
+
+async function configureRoomScripts(room: Room) {
+  currentRoom.value = room
+  showRoomScripts.value = true
+  scriptTab.value = 'room'
+  
+  try {
+    // 加载分类
+    const cats = await window.windv.category.list()
+    categories.value = cats
+    
+    // 加载房间专属话术
+    roomScripts.value = await (window.windv as any).roomScript?.list?.({ roomId: room.id }) || []
+    
+    // 加载全局话术
+    globalScripts.value = await (window.windv as any).roomScript?.getAvailable?.({ roomId: room.id }) || []
+  } catch (error) {
+    console.error('加载话术失败', error)
+  }
+}
+
+async function addRoomScript() {
+  if (!currentRoom.value || !scriptForm.keywords || !scriptForm.responses) {
+    ElMessage.warning('请填写完整信息')
+    return
+  }
+  
+  try {
+    await (window.windv as any).roomScript?.add?.({
+      roomId: currentRoom.value.id,
+      scriptId: '',
+      config: scriptForm
+    })
+    ElMessage.success('话术已添加')
+    configureRoomScripts(currentRoom.value)
+    scriptForm.keywords = ''
+    scriptForm.responses = ''
+    scriptForm.priority = 0
+  } catch (error) {
+    ElMessage.error('添加失败')
+  }
+}
+
+async function addToRoomScripts(script: any) {
+  if (!currentRoom.value) return
+  
+  try {
+    await (window.windv as any).roomScript?.add?.({
+      roomId: currentRoom.value.id,
+      scriptId: script.id,
+      config: { categoryId: script.category_id, priority: script.priority }
+    })
+    ElMessage.success('话术已添加到房间')
+    configureRoomScripts(currentRoom.value)
+  } catch (error) {
+    ElMessage.error('添加失败')
+  }
+}
+
+async function removeRoomScript(roomScriptId: string) {
+  if (!currentRoom.value) return
+  
+  try {
+    await ElMessageBox.confirm('确定要从房间移除此话术吗？', '确认', { type: 'warning' })
+    await (window.windv as any).roomScript?.remove?.({
+      roomId: currentRoom.value.id,
+      roomScriptId
+    })
+    ElMessage.success('话术已移除')
+    configureRoomScripts(currentRoom.value)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error('移除失败')
+    }
+  }
+}
+
+async function updateRoomScriptPriority(row: any) {
+  try {
+    await (window.windv as any).roomScript?.update?.({
+      roomScriptId: row.id,
+      updates: { priority: row.priority }
+    })
+  } catch (error) {
+    ElMessage.error('更新失败')
+  }
 }
 
 async function deleteRoom(id: string) {

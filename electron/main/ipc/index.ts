@@ -1076,3 +1076,171 @@ ipcMain.handle('tts:get-voices', async () => {
     return { success: false, voices: [], error: error.message }
   }
 })
+
+// ===== 云端同步 =====
+ipcMain.handle('sync:get-status', async () => {
+  try {
+    const { CloudSyncManager } = await import('../modules/CloudSyncManager');
+    const manager = CloudSyncManager.getInstance();
+    return await manager.getSyncStatus();
+  } catch (error: any) {
+    log.error('sync:get-status error:', error);
+    return { enabled: false, lastSync: null, pending: 0 };
+  }
+});
+
+ipcMain.handle('sync:do-sync', async () => {
+  try {
+    const { CloudSyncManager } = await import('../modules/CloudSyncManager');
+    const manager = CloudSyncManager.getInstance();
+    return await manager.sync();
+  } catch (error: any) {
+    log.error('sync:do-sync error:', error);
+    return { success: false, uploaded: 0, downloaded: 0, errors: [error.message] };
+  }
+});
+
+ipcMain.handle('sync:set-auto', async (_, { enabled, interval }) => {
+  try {
+    const { CloudSyncManager } = await import('../modules/CloudSyncManager');
+    const manager = CloudSyncManager.getInstance();
+    manager.setAutoSync(enabled, interval);
+    return { success: true };
+  } catch (error: any) {
+    log.error('sync:set-auto error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// ===== 直播间话术配置 =====
+ipcMain.handle('room-script:list', async (_, { roomId }) => {
+  try {
+    const { getRoomScripts } = await import('../database')
+    return getRoomScripts(roomId)
+  } catch (error) {
+    log.error('room-script:list error:', error)
+    return []
+  }
+})
+
+ipcMain.handle('room-script:get-available', async (_, { roomId }) => {
+  try {
+    const { getRoomAvailableScripts } = await import('../database')
+    return getRoomAvailableScripts(roomId)
+  } catch (error) {
+    log.error('room-script:get-available error:', error)
+    return []
+  }
+})
+
+ipcMain.handle('room-script:add', async (_, { roomId, scriptId, config }) => {
+  try {
+    const { addScriptToRoom } = await import('../database')
+    return addScriptToRoom(roomId, scriptId, config)
+  } catch (error) {
+    log.error('room-script:add error:', error)
+    throw error
+  }
+})
+
+ipcMain.handle('room-script:remove', async (_, { roomId, roomScriptId }) => {
+  try {
+    const { removeScriptFromRoom } = await import('../database')
+    return { success: removeScriptFromRoom(roomId, roomScriptId) }
+  } catch (error) {
+    log.error('room-script:remove error:', error)
+    return { success: false }
+  }
+})
+
+ipcMain.handle('room-script:update', async (_, { roomScriptId, updates }) => {
+  try {
+    const { updateRoomScript } = await import('../database')
+    return { success: updateRoomScript(roomScriptId, updates) }
+  } catch (error) {
+    log.error('room-script:update error:', error)
+    return { success: false }
+  }
+})
+
+// ===== 平台风控配置 =====
+ipcMain.handle('platform-risk:list', async () => {
+  try {
+    const { getAllPlatformRisks } = await import('../database')
+    return getAllPlatformRisks()
+  } catch (error) {
+    log.error('platform-risk:list error:', error)
+    return []
+  }
+})
+
+ipcMain.handle('platform-risk:get', async (_, { platformCode }) => {
+  try {
+    const { getPlatformRisk } = await import('../database')
+    return getPlatformRisk(platformCode)
+  } catch (error) {
+    log.error('platform-risk:get error:', error)
+    return null
+  }
+})
+
+ipcMain.handle('platform-risk:update', async (_, { platformCode, updates }) => {
+  try {
+    const { updatePlatformRisk } = await import('../database')
+    return { success: updatePlatformRisk(platformCode, updates) }
+  } catch (error) {
+    log.error('platform-risk:update error:', error)
+    return { success: false }
+  }
+})
+
+ipcMain.handle('platform-risk:get-effective', async (_, { roomId }) => {
+  try {
+    const { getEffectiveRiskConfig } = await import('../database')
+    return getEffectiveRiskConfig(roomId)
+  } catch (error) {
+    log.error('platform-risk:get-effective error:', error)
+    return null
+  }
+})
+
+// ===== 高级统计分析 =====
+ipcMain.handle('stats:get-high-frequency', async (_, { roomId, startDate, endDate, limit }) => {
+  try {
+    const { getHighFrequencyQuestions } = await import('../database')
+    return getHighFrequencyQuestions(roomId, startDate, endDate, limit || 10)
+  } catch (error) {
+    log.error('stats:get-high-frequency error:', error)
+    return []
+  }
+})
+
+ipcMain.handle('stats:get-activity-hours', async (_, { roomId, startDate, endDate }) => {
+  try {
+    const { getActivityHours } = await import('../database')
+    return getActivityHours(roomId, startDate, endDate)
+  } catch (error) {
+    log.error('stats:get-activity-hours error:', error)
+    return []
+  }
+})
+
+ipcMain.handle('stats:get-conversion-funnel', async (_, { roomId, startDate, endDate }) => {
+  try {
+    const { getConversionFunnel } = await import('../database')
+    return getConversionFunnel(roomId, startDate, endDate)
+  } catch (error) {
+    log.error('stats:get-conversion-funnel error:', error)
+    return {}
+  }
+})
+
+ipcMain.handle('stats:get-comparison', async (_, { roomId, period1Start, period1End, period2Start, period2End }) => {
+  try {
+    const { getComparisonData } = await import('../database')
+    return getComparisonData(roomId, period1Start, period1End, period2Start, period2End)
+  } catch (error) {
+    log.error('stats:get-comparison error:', error)
+    return { period1: {}, period2: {} }
+  }
+})

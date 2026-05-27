@@ -13,6 +13,15 @@ export interface WindVAPI {
     getActive: () => Promise<any[]>
   }
   
+  // 房间话术配置
+  roomScript: {
+    list: (params: { roomId: string }) => Promise<any[]>
+    getAvailable: (params: { roomId: string }) => Promise<any[]>
+    add: (params: { roomId: string; scriptId: string; config: any }) => Promise<any>
+    remove: (params: { roomId: string; roomScriptId: string }) => Promise<any>
+    update: (params: { roomScriptId: string; updates: any }) => Promise<any>
+  }
+  
   // 话术管理
   script: {
     list: (params?: any) => Promise<any[]>
@@ -42,6 +51,10 @@ export interface WindVAPI {
     getRealtime: (roomId: string) => Promise<any>
     getHistory: (params: any) => Promise<any[]>
     export: (params: any) => Promise<any>
+    getHighFrequency: (params: { roomId?: string; startDate: string; endDate: string; limit?: number }) => Promise<any[]>
+    getActivityHours: (params: { roomId?: string; startDate: string; endDate: string }) => Promise<any[]>
+    getConversionFunnel: (params: { roomId?: string; startDate: string; endDate: string }) => Promise<any>
+    getComparison: (params: { roomId?: string; period1Start: string; period1End: string; period2Start: string; period2End: string }) => Promise<any>
   }
   
   // 弹幕日志
@@ -143,6 +156,14 @@ export interface WindVAPI {
     restore: () => Promise<{ success: boolean; message: string }>
   }
   
+  // 平台风控配置
+  platformRisk: {
+    list: () => Promise<any[]>
+    get: (platformCode: string) => Promise<any>
+    update: (platformCode: string, updates: any) => Promise<{ success: boolean }>
+    getEffective: (roomId: string) => Promise<any>
+  }
+  
   // 授权管理
   license: {
     verify: (licenseCode: string) => Promise<{ valid: boolean; license?: any; error?: string; daysLeft?: number; isExpired?: boolean }>
@@ -196,6 +217,14 @@ const windvAPI: WindVAPI = {
     getActive: () => ipcRenderer.invoke('room:get-active')
   },
   
+  roomScript: {
+    list: (params) => ipcRenderer.invoke('room-script:list', params),
+    getAvailable: (params) => ipcRenderer.invoke('room-script:get-available', params),
+    add: (params) => ipcRenderer.invoke('room-script:add', params),
+    remove: (params) => ipcRenderer.invoke('room-script:remove', params),
+    update: (params) => ipcRenderer.invoke('room-script:update', params),
+  },
+  
   script: {
     list: (params) => ipcRenderer.invoke('script:list', params || {}),
     create: (data) => ipcRenderer.invoke('script:create', data),
@@ -220,7 +249,11 @@ const windvAPI: WindVAPI = {
   stats: {
     getRealtime: (roomId) => ipcRenderer.invoke('stats:get-realtime', { roomId }),
     getHistory: (params) => ipcRenderer.invoke('stats:get-history', params),
-    export: (params) => ipcRenderer.invoke('stats:export', params)
+    export: (params) => ipcRenderer.invoke('stats:export', params),
+    getHighFrequency: (params) => ipcRenderer.invoke('stats:get-high-frequency', params),
+    getActivityHours: (params) => ipcRenderer.invoke('stats:get-activity-hours', params),
+    getConversionFunnel: (params) => ipcRenderer.invoke('stats:get-conversion-funnel', params),
+    getComparison: (params) => ipcRenderer.invoke('stats:get-comparison', params)
   },
   
   danmaku: {
@@ -310,6 +343,14 @@ const windvAPI: WindVAPI = {
     getSyncStatus: () => ipcRenderer.invoke('cloud:sync-status'),
     setSyncEnabled: (enabled: boolean) => ipcRenderer.invoke('cloud:set-sync-enabled', { enabled }),
     restore: () => ipcRenderer.invoke('cloud:restore'),
+  },
+  
+  // 平台风控配置
+  platformRisk: {
+    list: () => ipcRenderer.invoke('platform-risk:list'),
+    get: (platformCode: string) => ipcRenderer.invoke('platform-risk:get', { platformCode }),
+    update: (platformCode: string, updates: any) => ipcRenderer.invoke('platform-risk:update', { platformCode, updates }),
+    getEffective: (roomId: string) => ipcRenderer.invoke('platform-risk:get-effective', { roomId }),
   },
   
   // 授权管理

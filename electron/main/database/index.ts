@@ -27,9 +27,18 @@ export async function initDatabase(): Promise<void> {
 
   // 执行建表
   createTables()
-
+  
+  // 创建直播间话术配置表
+  createRoomScriptTable()
+  
+  // 创建平台风控配置表
+  createPlatformRiskTable()
+  
   // 初始化默认数据
   initDefaultData()
+  
+  // 初始化默认平台风控配置
+  initDefaultPlatformRisks()
 
   log.info('数据库初始化完成')
 }
@@ -400,4 +409,461 @@ export function closeDatabase(): void {
     db = null
     log.info('数据库已关闭')
   }
+}
+
+/**
+ * 直播间话术配置表
+ * 用于存储每个房间独立的话术配置
+ */
+export function createRoomScriptTable(): void {
+  const database = getDatabase()
+  
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS room_script (
+      id TEXT PRIMARY KEY,
+      room_id TEXT NOT NULL,
+      script_id TEXT,
+      category_id TEXT,
+      enabled INTEGER DEFAULT 1,
+      priority INTEGER DEFAULT 0,
+      custom_keywords TEXT,
+      custom_responses TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (room_id) REFERENCES room(id) ON DELETE CASCADE,
+      FOREIGN KEY (script_id) REFERENCES script(id) ON DELETE CASCADE,
+      FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE SET NULL
+    )
+  `)
+  
+  // 创建索引
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS idx_room_script_room ON room_script(room_id)
+  `)
+}
+
+/**
+ * 获取直播间的话术配置
+ */
+export function getRoomScripts(roomId: string): any[] {
+  const database = getDatabase()
+  const stmt = database.prepare(`
+    SELECT rs.*, s.keywords, s.responses, s.intent_type, s.priority as script_priority,
+           c.name as category_name, c.color as category_color
+    FROM room_script rs
+    LEFT JOIN script s ON rs.script_id = s.id
+    LEFT JOIN category c ON rs.category_id = c.id
+    WHERE rs.room_id = ? AND rs.enabled = 1
+    ORDER BY rs.priority DESC, s.priority DESC
+  `)
+  return stmt.all(roomId)
+}
+
+/**
+ * 添加话术到房间
+ */
+export function addScriptToRoom(roomId: string, scriptId: string, config: {
+  categoryId?: string
+  priority?: number
+  customKeywords?: string[]
+  customResponses?: string[]
+}): any {
+  const database = getDatabase()
+  const id = `rs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  
+  const stmt = database.prepare(`
+    INSERT INTO room_script (id, room_id, script_id, category_id, priority, custom_keywords, custom_responses)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `)
+  
+  stmt.run(
+    id,
+    roomId,
+    scriptId,
+    config.categoryId || null,
+    config.priority || 0,
+    config.customKeywords ? JSON.stringify(config.customKeywords) : null,
+    config.customResponses ? JSON.stringify(config.customResponses) : null
+  )
+  
+  return { id, room_id: roomId, script_id: scriptId, ...config }
+}
+
+/**
+ * 从房间移除话术
+ */
+export function removeScriptFromRoom(roomId: string, roomScriptId: string): boolean {
+  const database = getDatabase()
+  const stmt = database.prepare('DELETE FROM room_script WHERE id = ? AND room_id = ?')
+  const result = stmt.run(roomScriptId, roomId)
+  return result.changes > 0
+}
+
+/**
+ * 更新房间话术配置
+ */
+export function updateRoomScript(roomScriptId: string, updates: {
+  enabled?: boolean
+  priority?: number
+  customKeywords?: string[]
+  customResponses?: string[]
+}): boolean {
+  const database = getDatabase()
+  
+  const fields: string[] = []
+  const values: any[] = []
+  
+  if (updates.enabled !== undefined) {
+    fields.push('enabled = ?')
+    values.push(updates.enabled ? 1 : 0)
+  }
+  if (updates.priority !== undefined) {
+    fields.push('priority = ?')
+    values.push(updates.priority)
+  }
+  if (updates.customKeywords !== undefined) {
+    fields.push('custom_keywords = ?')
+    values.push(JSON.stringify(updates.customKeywords))
+  }
+  if (updates.customResponses !== undefined) {
+    fields.push('custom_responses = ?')
+    values.push(JSON.stringify(updates.customResponses))
+  }
+  
+  if (fields.length === 0) return false
+  
+  fields.push("updated_at = datetime('now')")
+  values.push(roomScriptId)
+  
+  const stmt = database.prepare(`
+    UPDATE room_script SET ${fields.join(', ')} WHERE id = ?
+  `)
+  
+  const result = stmt.run(...values)
+  return result.changes > 0
+}
+
+/**
+ * 获取房间可用的话术（包括继承的全局话术）
+ */
+export function getRoomAvailableScripts(roomId: string): any[] {
+  const database = getDatabase()
+  
+  // 先获取房间专属话术
+  const roomScripts = getRoomScripts(roomId)
+  const roomScriptIds = roomScripts.map(rs => rs.script_id).filter(Boolean)
+  
+  // 获取全局话术（不在房间专属中的）
+  let globalScripts: any[] = []
+  if (roomScriptIds.length > 0) {
+    const placeholders = roomScriptIds.map(() => '?').join(',')
+    const stmt = database.prepare(`
+      SELECT s.*, c.name as category_name, c.color as category_color,
+             0 as is_room_specific
+      FROM script s
+      LEFT JOIN category c ON s.category_id = c.id
+      WHERE s.is_active = 1 AND s.id NOT IN (${placeholders})
+      ORDER BY s.priority DESC
+    `)
+    globalScripts = stmt.all(...roomScriptIds)
+  } else {
+    const stmt = database.prepare(`
+      SELECT s.*, c.name as category_name, c.color as category_color,
+             0 as is_room_specific
+      FROM script s
+      LEFT JOIN category c ON s.category_id = c.id
+      WHERE s.is_active = 1
+      ORDER BY s.priority DESC
+    `)
+    globalScripts = stmt.all()
+  }
+  
+  // 合并房间话术和全局话术
+  return [
+    ...roomScripts.map(rs => ({ ...rs, is_room_specific: 1 })),
+    ...globalScripts
+  ]
+}
+
+/**
+ * 平台风控配置表
+ * 每个平台可以有不同的风控参数
+ */
+export function createPlatformRiskTable(): void {
+  const database = getDatabase()
+  
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS platform_risk (
+      id TEXT PRIMARY KEY,
+      platform_code TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      min_delay INTEGER DEFAULT 1000,
+      max_delay INTEGER DEFAULT 3000,
+      max_per_minute INTEGER DEFAULT 20,
+      random_delay_enabled INTEGER DEFAULT 1,
+      sensitive_filter_enabled INTEGER DEFAULT 1,
+      max_retry_count INTEGER DEFAULT 3,
+      cooldown_seconds INTEGER DEFAULT 60,
+      enabled INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `)
+}
+
+/**
+ * 获取平台风控配置
+ */
+export function getPlatformRisk(platformCode: string): any | null {
+  const database = getDatabase()
+  const stmt = database.prepare('SELECT * FROM platform_risk WHERE platform_code = ? AND enabled = 1')
+  return stmt.get(platformCode) || null
+}
+
+/**
+ * 获取所有平台风控配置
+ */
+export function getAllPlatformRisks(): any[] {
+  const database = getDatabase()
+  const stmt = database.prepare('SELECT * FROM platform_risk ORDER BY name')
+  return stmt.all()
+}
+
+/**
+ * 更新平台风控配置
+ */
+export function updatePlatformRisk(platformCode: string, updates: {
+  name?: string
+  min_delay?: number
+  max_delay?: number
+  max_per_minute?: number
+  random_delay_enabled?: boolean
+  sensitive_filter_enabled?: boolean
+  max_retry_count?: number
+  cooldown_seconds?: number
+  enabled?: boolean
+}): boolean {
+  const database = getDatabase()
+  
+  const fields: string[] = []
+  const values: any[] = []
+  
+  if (updates.name !== undefined) {
+    fields.push('name = ?')
+    values.push(updates.name)
+  }
+  if (updates.min_delay !== undefined) {
+    fields.push('min_delay = ?')
+    values.push(updates.min_delay)
+  }
+  if (updates.max_delay !== undefined) {
+    fields.push('max_delay = ?')
+    values.push(updates.max_delay)
+  }
+  if (updates.max_per_minute !== undefined) {
+    fields.push('max_per_minute = ?')
+    values.push(updates.max_per_minute)
+  }
+  if (updates.random_delay_enabled !== undefined) {
+    fields.push('random_delay_enabled = ?')
+    values.push(updates.random_delay_enabled ? 1 : 0)
+  }
+  if (updates.sensitive_filter_enabled !== undefined) {
+    fields.push('sensitive_filter_enabled = ?')
+    values.push(updates.sensitive_filter_enabled ? 1 : 0)
+  }
+  if (updates.max_retry_count !== undefined) {
+    fields.push('max_retry_count = ?')
+    values.push(updates.max_retry_count)
+  }
+  if (updates.cooldown_seconds !== undefined) {
+    fields.push('cooldown_seconds = ?')
+    values.push(updates.cooldown_seconds)
+  }
+  if (updates.enabled !== undefined) {
+    fields.push('enabled = ?')
+    values.push(updates.enabled ? 1 : 0)
+  }
+  
+  if (fields.length === 0) return false
+  
+  fields.push("updated_at = datetime('now')")
+  values.push(platformCode)
+  
+  const stmt = database.prepare(`
+    UPDATE platform_risk SET ${fields.join(', ')} WHERE platform_code = ?
+  `)
+  
+  const result = stmt.run(...values)
+  return result.changes > 0
+}
+
+/**
+ * 初始化默认平台风控配置
+ */
+export function initDefaultPlatformRisks(): void {
+  const database = getDatabase()
+  
+  const defaultPlatforms = [
+    { code: 'taobao', name: '淘宝直播', min_delay: 1000, max_delay: 3000, max_per_minute: 20 },
+    { code: 'pinduoduo', name: '拼多多直播', min_delay: 1500, max_delay: 4000, max_per_minute: 15 },
+    { code: 'douyin', name: '抖音电商', min_delay: 2000, max_delay: 5000, max_per_minute: 10 },
+    { code: 'video_we', name: '视频号', min_delay: 1500, max_delay: 4000, max_per_minute: 15 },
+  ]
+  
+  for (const platform of defaultPlatforms) {
+    const exist = database.prepare('SELECT 1 FROM platform_risk WHERE platform_code = ?').get(platform.code)
+    if (!exist) {
+      database.prepare(`
+        INSERT INTO platform_risk (id, platform_code, name, min_delay, max_delay, max_per_minute)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        `pr_${platform.code}`,
+        platform.code,
+        platform.name,
+        platform.min_delay,
+        platform.max_delay,
+        platform.max_per_minute
+      )
+    }
+  }
+}
+
+/**
+ * 获取房间的风控配置（优先使用房间配置，否则使用平台默认）
+ */
+export function getEffectiveRiskConfig(roomId: string): any {
+  const database = getDatabase()
+  
+  // 先获取房间信息
+  const room = database.prepare('SELECT * FROM room WHERE id = ?').get(roomId) as any
+  if (!room) return null
+  
+  // 获取平台风控配置
+  const platformRisk = getPlatformRisk(room.platform_code)
+  if (!platformRisk) return null
+  
+  // 尝试获取房间自定义配置（如果有）
+  const roomConfig = room.config ? JSON.parse(room.config) : {}
+  
+  return {
+    ...platformRisk,
+    roomId: room.id,
+    platformCode: room.platform_code,
+    customConfig: roomConfig.risk || {}
+  }
+}
+
+/**
+ * 获取高频问题统计
+ */
+export function getHighFrequencyQuestions(roomId: string, startDate: string, endDate: string, limit: number = 10): any[] {
+  const database = getDatabase()
+  
+  const stmt = database.prepare(`
+    SELECT
+      content,
+      COUNT(*) as count,
+      COUNT(CASE WHEN response_sent = 1 THEN 1 END) as replied_count
+    FROM danmaku_log
+    WHERE room_id = ? AND date(created_at) >= date(?) AND date(created_at) <= date(?) AND is_blocked = 0
+    GROUP BY content
+    ORDER BY count DESC
+    LIMIT ?
+  `)
+  
+  return stmt.all(roomId, startDate, endDate, limit).map((row: any) => ({
+    keywords: [row.content.substring(0, 20)], // 取前20字符作为关键词展示
+    content: row.content,
+    count: row.count,
+    replied_count: row.replied_count,
+    reply_rate: row.count > 0 ? Math.round(row.replied_count / row.count * 100) : 0
+  }))
+}
+
+/**
+ * 获取活跃时段分析
+ */
+export function getActivityHours(roomId: string, startDate: string, endDate: string): any[] {
+  const database = getDatabase()
+  
+  const stmt = database.prepare(`
+    SELECT
+      strftime('%H', created_at) as hour,
+      COUNT(*) as danmaku_count,
+      COUNT(CASE WHEN response_sent = 1 THEN 1 END) as reply_count,
+      COUNT(CASE WHEN intent_type IS NOT NULL AND intent_type != 'chat' THEN 1 END) as intent_count
+    FROM danmaku_log
+    WHERE room_id = ? AND date(created_at) >= date(?) AND date(created_at) <= date(?)
+    GROUP BY hour
+    ORDER BY hour
+  `)
+  
+  return stmt.all(roomId, startDate, endDate)
+}
+
+/**
+ * 获取转化率漏斗数据
+ */
+export function getConversionFunnel(roomId: string, startDate: string, endDate: string): any {
+  const database = getDatabase()
+  
+  // 漏斗步骤：弹幕总数 -> 意图识别数 -> 回复数 -> 回复成功数 -> 订单数
+  const stats = database.prepare(`
+    SELECT
+      COUNT(*) as danmaku_total,
+      COUNT(CASE WHEN intent_type IS NOT NULL AND intent_type != 'chat' THEN 1 END) as intent_matched,
+      COUNT(CASE WHEN response_sent = 1 THEN 1 END) as reply_total,
+      COUNT(CASE WHEN response_sent = 1 AND is_blocked = 0 THEN 1 END) as reply_success,
+      COUNT(DISTINCT sender_id) as unique_users
+    FROM danmaku_log
+    WHERE room_id = ? AND date(created_at) >= date(?) AND date(created_at) <= date(?)
+  `).get(roomId, startDate, endDate) as any
+  
+  // 从订单日志获取订单数
+  const orderStats = database.prepare(`
+    SELECT
+      COUNT(*) as order_count,
+      SUM(amount) as order_total
+    FROM order_log
+    WHERE room_id = ? AND date(created_at) >= date(?) AND date(created_at) <= date(?)
+  `).get(roomId, startDate, endDate) as any
+  
+  return {
+    danmaku_total: (stats && stats.danmaku_total) || 0,
+    intent_matched: (stats && stats.intent_matched) || 0,
+    reply_total: (stats && stats.reply_total) || 0,
+    reply_success: (stats && stats.reply_success) || 0,
+    unique_users: (stats && stats.unique_users) || 0,
+    order_count: (orderStats && orderStats.order_count) || 0,
+    order_total: (orderStats && orderStats.order_total) || 0
+  }
+}
+
+/**
+ * 获取对比数据（两个时间段对比）
+ */
+export function getComparisonData(roomId: string, period1Start: string, period1End: string, period2Start: string, period2End: string): {
+  period1: any,
+  period2: any
+} {
+  const database = getDatabase()
+  
+  const getStats = (startDate: string, endDate: string) => {
+    const stmt = database.prepare(`
+      SELECT
+        COUNT(*) as danmaku_count,
+        COUNT(CASE WHEN response_sent = 1 THEN 1 END) as reply_count,
+        COUNT(CASE WHEN response_sent = 1 AND is_blocked = 0 THEN 1 END) as reply_success_count,
+        COUNT(DISTINCT sender_id) as unique_users
+      FROM danmaku_log
+      WHERE room_id = ? AND date(created_at) >= date(?) AND date(created_at) <= date(?)
+    `)
+    return stmt.get(roomId, startDate, endDate) as any
+  }
+  
+  const period1 = getStats(period1Start, period1End)
+  const period2 = getStats(period2Start, period2End)
+  
+  return { period1: period1 || {}, period2: period2 || {} }
 }
