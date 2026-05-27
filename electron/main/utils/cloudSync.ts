@@ -34,19 +34,15 @@ class CloudSyncManager {
   /**
    * 初始化
    */
-  async init(): Promise<void> {
-    // 加载同步设置
-    const syncEnabled = await getSettings('cloudSyncEnabled')
-    this.status.syncEnabled = syncEnabled === 'true' || syncEnabled === true
-
-    const lastSync = await getSettings('lastSyncTime')
-    this.status.lastSyncTime = lastSync || null
-
-    // 如果启用了自动同步，启动定时器
-    if (this.status.syncEnabled) {
-      this.startAutoSync()
-    }
+init(): void {
+  const syncEnabled = getSettings('cloudSyncEnabled')
+  this.status.syncEnabled = syncEnabled === 'true'
+  const lastSync = getSettings('lastSyncTime')
+  this.status.lastSyncTime = lastSync || null
+  if (this.status.syncEnabled) {
+    this.startAutoSync()
   }
+}
 
   /**
    * 启用/禁用同步
