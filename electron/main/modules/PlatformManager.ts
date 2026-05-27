@@ -12,6 +12,8 @@ import { ScriptMatcher } from '../ai/ScriptMatcher'
 import { IntentClassifier, IntentType } from '../ai/IntentClassifier'
 import { RiskController } from './RiskController'
 import { StatisticsCollector } from './StatisticsCollector'
+import { HighFrequencyDetector } from './HighFrequencyDetector'
+import { OrderConfigManager } from './OrderConfigManager'
 
 interface ActiveRoom {
   id: string
@@ -43,6 +45,8 @@ export class PlatformManager {
   private intentClassifier: IntentClassifier
   private riskController: RiskController
   private statsCollector: StatisticsCollector
+  private highFrequencyDetector: HighFrequencyDetector
+  private orderConfigManager: OrderConfigManager
   private mainWindow: BrowserWindow | null = null
 
   constructor() {
@@ -54,6 +58,14 @@ export class PlatformManager {
     this.intentClassifier = new IntentClassifier()
     this.riskController = new RiskController()
     this.statsCollector = StatisticsCollector.getInstance()
+    this.highFrequencyDetector = HighFrequencyDetector.getInstance()
+    this.orderConfigManager = OrderConfigManager.getInstance()
+
+    // 监听高频问题事件
+    this.highFrequencyDetector.on('high_frequency', (data: { content: string; count: number; roomId: string }) => {
+      log.info(`检测到高频问题: ${data.content} (${data.count}次)`)
+      this.sendToRenderer('hfq:detected', data)
+    })
 
     log.info('PlatformManager 初始化完成')
   }
@@ -223,6 +235,9 @@ export class PlatformManager {
         return
       }
 
+      // 记录高频问题检测
+      this.highFrequencyDetector.recordQuestion(danmaku.content, danmaku.senderId)
+
       // 匹配话术
       const matchResult = await this.scriptMatcher.match(intentResult.type, danmaku.content, roomId)
 
@@ -284,16 +299,29 @@ export class PlatformManager {
       // 记录统计
       this.statsCollector.recordOrder(roomId, order.amount, order.status)
 
-      // 发送播报
+      // 获取订单配置
+      const config = this.orderConfigManager.getConfig()
       const activeRoom = this.activeRooms.get(roomId)
+
+      // 发送播报
       if (activeRoom && activeRoom.status === 'monitoring') {
-        const announceText = this.generateAnnounceText(order)
+        // 确定订单等级
+        let level: 'normal' | 'large' | 'mega' = 'normal'
+        if (order.amount >= config.megaThreshold) {
+          level = 'mega'
+        } else if (order.amount >= config.largeThreshold) {
+          level = 'large'
+        }
+
+        // 获取播报模板（使用 OrderConfigManager）
+        const announcement = this.orderConfigManager.generateAnnouncement(order.amount, order.nicknameMasked)
+        const announceText = announcement.text
         
-        // 大额订单多次播报
-        const announceCount = order.amount > (activeRoom.config.largeOrderThreshold || 500) ? 3 : 1
+        // 根据配置决定播报次数
+        const announceCount = announcement.repeat
         
         for (let i = 0; i < announceCount; i++) {
-          await this.sleep(i * 2000 + Math.random() * 1000)
+          await this.sleep(i * config.repeatInterval * 1000 + Math.random() * 1000)
           await activeRoom.adapter.sendDanmaku(announceText)
         }
 
@@ -301,6 +329,11 @@ export class PlatformManager {
         db.prepare(`
           UPDATE order_log SET announce_count = ?, last_announced_at = datetime('now') WHERE id = ?
         `).run(announceCount, orderId)
+
+        // 弹窗通知（如果启用）
+        if (announcement.shouldPopup) {
+          this.orderConfigManager.showOrderPopup(order.amount, order.nicknameMasked, announcement.level)
+        }
       }
 
       // 通知渲染进程
@@ -316,32 +349,6 @@ export class PlatformManager {
     } catch (error) {
       log.error(`处理订单失败: ${error}`)
     }
-  }
-
-  /**
-   * 生成播报文案
-   */
-  private generateAnnounceText(order: OrderInfo): string {
-    const templates = {
-      new: ['🎉 恭喜 {nickname} 抢到同款！', '✨ {nickname} 已下单，坐等收货~'],
-      paid: ['💰 {nickname} 已付款锁定！现货秒发！', '✅ {nickname} 付款成功，感谢信任！'],
-      large_order: [
-        `🔥🔥🔥 大单来袭！{nickname} 豪气下单 ${order.amount} 元！`,
-        `💎 尊贵会员 {nickname} 喜提大单，感谢支持！`
-      ]
-    }
-
-    let pool: string[]
-    if (order.amount > 500) {
-      pool = templates.large_order
-    } else if (order.status === 'paid') {
-      pool = templates.paid
-    } else {
-      pool = templates.new
-    }
-
-    const template = pool[Math.floor(Math.random() * pool.length)]
-    return template.replace('{nickname}', order.nicknameMasked)
   }
 
   /**
