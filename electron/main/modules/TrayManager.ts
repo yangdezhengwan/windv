@@ -96,7 +96,7 @@ export class TrayManager {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: '无人直播助手',
+        label: '小狐狸',
         enabled: false
       },
       { type: 'separator' },

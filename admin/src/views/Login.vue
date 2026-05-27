@@ -19,8 +19,8 @@
             </svg>
           </div>
         </div>
-        <h1 class="brand-name">WindV</h1>
-        <p class="brand-tagline">无人直播 AI 助手 - 管理后台</p>
+        <h1 class="brand-name">小狐狸</h1>
+        <p class="brand-tagline">小狐狸 AI 助手 - 管理后台</p>
       </div>
 
       <!-- 登录表单 -->

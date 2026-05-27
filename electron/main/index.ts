@@ -44,7 +44,7 @@ function createWindow(): void {
     height: 800,
     minWidth: 1024,
     minHeight: 680,
-    title: '无人直播助手',
+    title: '小狐狸',
     show: false,
     autoHideMenuBar: false,
     webPreferences: {
@@ -103,7 +103,7 @@ function createWindow(): void {
     if (!(app as any).isQuitting) {
       event.preventDefault()
       mainWindow?.hide()
-      trayManager?.showNotification('无人直播助手', '已最小化到托盘，运行中...')
+      trayManager?.showNotification('小狐狸', '已最小化到托盘，运行中...')
     }
   })
 
@@ -119,7 +119,7 @@ function showAboutDialog(): void {
   dialog.showMessageBox({
     type: 'info',
     title: '关于',
-    message: '无人直播助手',
+    message: '小狐狸',
     detail: `版本: 1.0.0\n多平台无人直播AI辅助系统\n\n© 2026 All Rights Reserved`
   })
 }

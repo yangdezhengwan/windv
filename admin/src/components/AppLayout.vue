@@ -6,7 +6,7 @@
         <div class="logo">
           <div class="logo-icon">🌊</div>
           <div class="logo-text">
-            <span class="brand">WindV</span>
+            <span class="brand">小狐狸</span>
             <span class="tagline">管理后台</span>
           </div>
         </div>

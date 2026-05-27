@@ -11,7 +11,7 @@
               <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2"/>
             </svg>
           </div>
-          <span class="logo-text">WindV</span>
+          <span class="logo-text">小狐狸</span>
         </div>
       </div>
 

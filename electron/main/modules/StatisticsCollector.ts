@@ -260,7 +260,7 @@ export class StatisticsCollector {
 
     // 创建工作簿
     const workbook = new ExcelJS.Workbook()
-    workbook.creator = '无人直播助手'
+    workbook.creator = '小狐狸'
     workbook.created = new Date()
 
     // Sheet 1: 每日统计

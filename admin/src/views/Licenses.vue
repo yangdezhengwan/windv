@@ -5,7 +5,7 @@
       <div class="sidebar-header">
         <div class="logo">
           <div class="logo-icon">📺</div>
-          <span class="logo-text">WindV</span>
+          <span class="logo-text">小狐狸</span>
         </div>
       </div>
 

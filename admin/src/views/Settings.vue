@@ -12,7 +12,7 @@
           <h3>站点信息</h3>
           <el-form label-width="120px">
             <el-form-item label="站点名称">
-              <el-input v-model="settings.siteName" placeholder="WindV 管理系统" />
+              <el-input v-model="settings.siteName" placeholder="小狐狸 管理系统" />
             </el-form-item>
             <el-form-item label="允许注册">
               <el-switch v-model="settings.allowRegister" />
@@ -197,7 +197,7 @@ const API_BASE = 'http://sq.kxkj.ltd/api'
 
 const activeTab = ref('basic')
 const settings = ref({
-  siteName: 'WindV 管理系统',
+  siteName: '小狐狸 管理系统',
   allowRegister: true,
   maintenanceMode: false
 })

@@ -1,7 +1,7 @@
 {
   "name": "windv-admin",
   "version": "1.0.0",
-  "description": "WindV 管理后台",
+  "description": "小狐狸 管理后台",
   "type": "module",
   "scripts": {
     "dev": "vite",
