@@ -7,6 +7,9 @@ import { TaobaoAdapter } from '../platform/adapters/TaobaoAdapter'
 import { PinduoduoAdapter } from '../platform/adapters/PinduoduoAdapter'
 import { DouyinAdapter } from '../platform/adapters/DouyinAdapter'
 import { VideoWeAdapter } from '../platform/adapters/VideoWeAdapter'
+import { KuaishouAdapter } from '../platform/adapters/KuaishouAdapter'
+import { JDAdapter } from '../platform/adapters/JDAdapter'
+import { BilibiliAdapter } from '../platform/adapters/BilibiliAdapter'
 import { IPlatformAdapter, PlatformCode, Danmaku, OrderInfo } from '../platform/IPlatformAdapter'
 import { ScriptMatcher } from '../ai/ScriptMatcher'
 import { IntentClassifier, IntentType } from '../ai/IntentClassifier'
@@ -92,13 +95,18 @@ export class PlatformManager {
    * 注册平台适配器
    */
   private registerAdapters(): void {
-    // 已完成平台
+    // 基础平台
     this.adapters.set(PlatformCode.TAOBAO, new TaobaoAdapter())
     this.adapters.set(PlatformCode.PINDUODUO, new PinduoduoAdapter())
     
-    // V2.0 新增平台
+    // V2.0 平台
     this.adapters.set(PlatformCode.DOUYIN, new DouyinAdapter())
     this.adapters.set(PlatformCode.VIDEO_WEE, new VideoWeAdapter())
+    
+    // V3.0 新增平台
+    this.adapters.set(PlatformCode.KUAISHOU, new KuaishouAdapter())
+    this.adapters.set(PlatformCode.JD, new JDAdapter())
+    this.adapters.set(PlatformCode.BILIBILI, new BilibiliAdapter())
     
     log.info(`已注册 ${this.adapters.size} 个平台适配器`)
   }
@@ -377,6 +385,12 @@ export class PlatformManager {
         return new DouyinAdapter()
       case PlatformCode.VIDEO_WEE:
         return new VideoWeAdapter()
+      case PlatformCode.KUAISHOU:
+        return new KuaishouAdapter()
+      case PlatformCode.JD:
+        return new JDAdapter()
+      case PlatformCode.BILIBILI:
+        return new BilibiliAdapter()
       default:
         throw new Error(`不支持的平台: ${platform}`)
     }

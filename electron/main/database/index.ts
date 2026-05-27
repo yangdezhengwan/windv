@@ -709,6 +709,9 @@ export function initDefaultPlatformRisks(): void {
     { code: 'pinduoduo', name: '拼多多直播', min_delay: 1500, max_delay: 4000, max_per_minute: 15 },
     { code: 'douyin', name: '抖音电商', min_delay: 2000, max_delay: 5000, max_per_minute: 10 },
     { code: 'video_we', name: '视频号', min_delay: 1500, max_delay: 4000, max_per_minute: 15 },
+    { code: 'kuaishou', name: '快手直播', min_delay: 1500, max_delay: 4000, max_per_minute: 15 },
+    { code: 'jd', name: '京东直播', min_delay: 1500, max_delay: 4000, max_per_minute: 15 },
+    { code: 'bilibili', name: 'B站直播', min_delay: 2000, max_delay: 5000, max_per_minute: 12 },
   ]
   
   for (const platform of defaultPlatforms) {

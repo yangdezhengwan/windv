@@ -6,6 +6,9 @@ export enum PlatformCode {
   PINDUODUO = 'pinduoduo',
   DOUYIN = 'douyin',
   VIDEO_WEE = 'video_we',
+  KUAISHOU = 'kuaishou',
+  JD = 'jd',
+  BILIBILI = 'bilibili',
 }
 
 /**

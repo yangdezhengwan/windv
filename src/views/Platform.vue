@@ -146,6 +146,9 @@
                 <el-option label="拼多多" value="pinduoduo" />
                 <el-option label="抖音" value="douyin" />
                 <el-option label="视频号" value="video_we" />
+                <el-option label="快手" value="kuaishou" />
+                <el-option label="京东" value="jd" />
+                <el-option label="B站" value="bilibili" />
               </el-select>
             </div>
           </div>
@@ -237,6 +240,15 @@
             </el-option>
             <el-option label="视频号" value="video_we">
               <span style="margin-right: 8px">📱</span> Video Channel
+            </el-option>
+            <el-option label="快手直播" value="kuaishou">
+              <span style="margin-right: 8px">📺</span> Kuaishou Live
+            </el-option>
+            <el-option label="京东直播" value="jd">
+              <span style="margin-right: 8px">🛍️</span> JD Live
+            </el-option>
+            <el-option label="B站直播" value="bilibili">
+              <span style="margin-right: 8px">📺</span> Bilibili Live
             </el-option>
           </el-select>
         </el-form-item>
