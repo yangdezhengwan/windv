@@ -16,7 +16,7 @@ const licenseSchema = new mongoose.Schema({
   // 机器码（用于验证）
   machineCode: {
     type: String,
-    required: true,
+    required: false,
   },
   
   // 设备信息

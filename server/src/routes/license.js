@@ -1,36 +1,46 @@
 /**
- * 软件授权相关路由
+ * Software License API Routes
  */
 
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
-const { User } = require('../models/User');
-const { License } = require('../models/License');
-const { logger } = require('../utils/logger');
-const { generateLicense } = require('../utils/licenseGenerator');
+
+// Dynamic model loader
+function getLicenseModel() {
+  return require('../models/License');
+}
+
+function getUserModel() {
+  return require('../models/User');
+}
+
+// Simple error logging
+function logError(msg, err) {
+  console.error('[License Error]', msg, err ? (err.message || String(err)) : 'unknown');
+}
 
 /**
- * 生成授权码 (管理员)
+ * Generate License (Admin)
  * POST /api/license/generate
  */
 router.post('/generate', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: '需要管理员权限' });
+      return res.status(403).json({ error: 'Admin access required' });
     }
     
     const { deviceId, deviceName, type = 'standard', expiryDays = 365, features = ['basic'] } = req.body;
     
     if (!deviceId) {
-      return res.status(400).json({ error: '缺少设备ID' });
+      return res.status(400).json({ error: 'Device ID required' });
     }
     
-    // 检查是否已存在有效授权
+    const License = getLicenseModel();
     const existingLicense = await License.findOne({ deviceId, isActive: true });
     if (existingLicense) {
       return res.status(400).json({ 
-        error: '该设备已有有效授权',
+        error: 'Device already licensed',
         existingLicense: {
           licenseCode: existingLicense.licenseCode,
           expiryDate: existingLicense.expiryDate,
@@ -39,20 +49,13 @@ router.post('/generate', authenticate, async (req, res) => {
       });
     }
     
-    // 生成新授权
-    const licenseCode = generateLicense({
-      deviceId,
-      deviceName: deviceName || '未命名设备',
-      type,
-      expiryDays: parseInt(expiryDays),
-      features: Array.isArray(features) ? features : ['basic'],
-    });
+    // Use a simple license code format
+    const licenseCode = 'WINDV-' + deviceId.substring(0, 8).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
     
-    // 保存到数据库
     const license = new License({
       licenseCode,
       deviceId,
-      deviceName: deviceName || '未命名设备',
+      deviceName: deviceName || 'Unknown Device',
       type,
       features: Array.isArray(features) ? features : ['basic'],
       expiryDate: new Date(Date.now() + parseInt(expiryDays) * 24 * 60 * 60 * 1000),
@@ -61,8 +64,7 @@ router.post('/generate', authenticate, async (req, res) => {
     });
     
     await license.save();
-    
-    logger.info(`管理员生成授权: ${licenseCode} for ${deviceId}`);
+    console.log('[License] Generated:', licenseCode, 'for', deviceId);
     
     res.json({
       success: true,
@@ -77,13 +79,13 @@ router.post('/generate', authenticate, async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('生成授权失败:', error);
-    res.status(500).json({ error: '生成授权失败: ' + error.message });
+    logError('Generate license failed', error);
+    res.status(500).json({ error: 'Failed to generate license' });
   }
 });
 
 /**
- * 验证授权码 (客户端使用)
+ * Verify License
  * POST /api/license/verify
  */
 router.post('/verify', async (req, res) => {
@@ -91,49 +93,41 @@ router.post('/verify', async (req, res) => {
     const { licenseCode, deviceId } = req.body;
     
     if (!licenseCode) {
-      return res.status(400).json({ error: '缺少授权码' });
+      return res.status(400).json({ error: 'License code required', valid: false });
     }
     
+    const License = getLicenseModel();
+    
+    if (!License) {
+      console.error('[License] Model not loaded!');
+      return res.status(500).json({ error: 'License model not loaded', valid: false });
+    }
+    
+    console.log('[License] Looking for:', licenseCode);
     const license = await License.findOne({ licenseCode });
+    console.log('[License] Found:', license ? license.licenseCode : 'null');
     
     if (!license) {
-      return res.status(404).json({ 
-        valid: false,
-        error: '授权码不存在' 
-      });
+      return res.status(404).json({ valid: false, error: 'License not found' });
     }
     
-    // 检查是否已激活
     if (!license.isActive) {
-      return res.status(403).json({ 
-        valid: false,
-        error: '授权码已失效' 
-      });
+      return res.status(403).json({ valid: false, error: 'License deactivated' });
     }
     
-    // 检查是否过期
     if (new Date(license.expiryDate) < new Date()) {
-      return res.status(403).json({ 
-        valid: false,
-        error: '授权已过期',
-        expiryDate: license.expiryDate,
-      });
+      return res.status(403).json({ valid: false, error: 'License expired', expiryDate: license.expiryDate });
     }
     
-    // 如果提供了 deviceId，检查是否匹配
     if (deviceId && license.deviceId && license.deviceId !== deviceId) {
-      return res.status(403).json({ 
-        valid: false,
-        error: '授权码与设备不匹配' 
-      });
+      return res.status(403).json({ valid: false, error: 'Device mismatch' });
     }
     
-    // 首次激活，绑定设备
     if (!license.deviceId && deviceId) {
       license.deviceId = deviceId;
       license.activatedAt = new Date();
       await license.save();
-      logger.info(`授权首次激活: ${licenseCode} 绑定设备 ${deviceId}`);
+      console.log('[License] Activated:', licenseCode, 'for device', deviceId);
     }
     
     res.json({
@@ -148,21 +142,22 @@ router.post('/verify', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('验证授权失败:', error);
-    res.status(500).json({ error: '验证失败: ' + error.message });
+    logError('Verify license failed', error);
+    res.status(500).json({ error: 'Verification failed' });
   }
 });
 
 /**
- * 获取授权列表 (管理员)
+ * Get License List (Admin)
  * GET /api/license/list
  */
 router.get('/list', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: '需要管理员权限' });
+      return res.status(403).json({ error: 'Admin access required' });
     }
     
+    const License = getLicenseModel();
     const { page = 1, limit = 20, type, isActive, keyword } = req.query;
     
     const query = {};
@@ -183,19 +178,10 @@ router.get('/list', authenticate, async (req, res) => {
     
     const total = await License.countDocuments(query);
     
-    // 统计
     const stats = {
       total: await License.countDocuments(),
       active: await License.countDocuments({ isActive: true }),
-      expired: await License.countDocuments({ 
-        isActive: true, 
-        expiryDate: { $lt: new Date() } 
-      }),
-      byType: {
-        admin: await License.countDocuments({ type: 'admin' }),
-        standard: await License.countDocuments({ type: 'standard' }),
-        trial: await License.countDocuments({ type: 'trial' }),
-      }
+      expired: await License.countDocuments({ isActive: true, expiryDate: { $lt: new Date() } }),
     };
     
     res.json({
@@ -204,99 +190,92 @@ router.get('/list', authenticate, async (req, res) => {
       pagination: { page: parseInt(page), limit: parseInt(limit), total },
     });
   } catch (error) {
-    logger.error('获取授权列表失败:', error);
-    res.status(500).json({ error: '获取列表失败: ' + error.message });
+    logError('Get license list failed', error);
+    res.status(500).json({ error: 'Failed to get list' });
   }
 });
 
 /**
- * 获取当前用户授权
+ * Get My Licenses
  * GET /api/license/my
  */
 router.get('/my', authenticate, async (req, res) => {
   try {
+    const License = getLicenseModel();
     const { deviceId } = req.query;
     
     const query = { createdBy: req.user.id, isActive: true };
     if (deviceId) query.deviceId = deviceId;
     
     const licenses = await License.find(query).sort({ createdAt: -1 });
-    
     res.json({ licenses });
   } catch (error) {
-    logger.error('获取用户授权失败:', error);
-    res.status(500).json({ error: '获取失败' });
+    logError('Get my licenses failed', error);
+    res.status(500).json({ error: 'Failed to get licenses' });
   }
 });
 
 /**
- * 撤销授权 (管理员)
+ * Revoke License (Admin)
  * DELETE /api/license/:id
  */
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: '需要管理员权限' });
+      return res.status(403).json({ error: 'Admin access required' });
     }
     
+    const License = getLicenseModel();
     const license = await License.findById(req.params.id);
     if (!license) {
-      return res.status(404).json({ error: '授权不存在' });
+      return res.status(404).json({ error: 'License not found' });
     }
     
     license.isActive = false;
     license.deactivatedAt = new Date();
     await license.save();
     
-    logger.info(`授权已撤销: ${license.licenseCode}`);
-    
-    res.json({ success: true, message: '授权已撤销' });
+    console.log('[License] Revoked:', license.licenseCode);
+    res.json({ success: true, message: 'License revoked' });
   } catch (error) {
-    logger.error('撤销授权失败:', error);
-    res.status(500).json({ error: '撤销失败: ' + error.message });
+    logError('Revoke license failed', error);
+    res.status(500).json({ error: 'Failed to revoke' });
   }
 });
 
 /**
- * 延长授权有效期 (管理员)
+ * Extend License (Admin)
  * POST /api/license/:id/extend
  */
 router.post('/:id/extend', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: '需要管理员权限' });
+      return res.status(403).json({ error: 'Admin access required' });
     }
     
+    const License = getLicenseModel();
     const { days = 365 } = req.body;
     
     const license = await License.findById(req.params.id);
     if (!license) {
-      return res.status(404).json({ error: '授权不存在' });
+      return res.status(404).json({ error: 'License not found' });
     }
     
-    // 在原有有效期基础上延长
     const currentExpiry = new Date(license.expiryDate);
     const newExpiry = new Date(currentExpiry.getTime() + parseInt(days) * 24 * 60 * 60 * 1000);
     license.expiryDate = newExpiry;
     await license.save();
     
-    logger.info(`授权已延长: ${license.licenseCode} 至 ${newExpiry}`);
-    
-    res.json({
-      success: true,
-      license: {
-        licenseCode: license.licenseCode,
-        expiryDate: license.expiryDate,
-      }
-    });
+    console.log('[License] Extended:', license.licenseCode, 'to', newExpiry);
+    res.json({ success: true, license: { licenseCode: license.licenseCode, expiryDate: license.expiryDate } });
   } catch (error) {
-    logger.error('延长授权失败:', error);
-    res.status(500).json({ error: '延长失败: ' + error.message });
+    logError('Extend license failed', error);
+    res.status(500).json({ error: 'Failed to extend' });
   }
 });
 
 /**
- * 激活试用授权
+ * Activate Trial
  * POST /api/license/trial
  */
 router.post('/trial', async (req, res) => {
@@ -304,42 +283,36 @@ router.post('/trial', async (req, res) => {
     const { deviceId, deviceName } = req.body;
     
     if (!deviceId) {
-      return res.status(400).json({ error: '缺少设备ID' });
+      return res.status(400).json({ error: 'Device ID required' });
     }
     
-    // 检查是否已有授权
+    const License = getLicenseModel();
+    
+    if (!License) {
+      console.error('[Trial] Model not loaded!');
+      return res.status(500).json({ error: 'License model not loaded' });
+    }
+    
+    console.log('[Trial] Activating for device:', deviceId);
+    
     const existingLicense = await License.findOne({ deviceId, isActive: true });
     if (existingLicense) {
-      return res.status(400).json({ 
-        error: '该设备已有授权',
-        license: {
-          type: existingLicense.type,
-          expiryDate: existingLicense.expiryDate,
-        }
-      });
+      console.log('[Trial] Device already has license');
+      return res.status(400).json({ error: 'Device already licensed' });
     }
     
-    // 检查是否有过试用记录
     const trialHistory = await License.findOne({ deviceId, type: 'trial' });
     if (trialHistory) {
-      return res.status(400).json({ 
-        error: '该设备已使用过试用授权' 
-      });
+      console.log('[Trial] Trial already used');
+      return res.status(400).json({ error: 'Trial already used' });
     }
     
-    // 生成试用授权（7天）
-    const licenseCode = generateLicense({
-      deviceId,
-      deviceName: deviceName || '试用设备',
-      type: 'trial',
-      expiryDays: 7,
-      features: ['basic', 'stats'],
-    });
+    const licenseCode = 'TRIAL-' + deviceId.substring(0, 8).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
     
     const license = new License({
       licenseCode,
       deviceId,
-      deviceName: deviceName || '试用设备',
+      deviceName: deviceName || 'Trial Device',
       type: 'trial',
       features: ['basic', 'stats'],
       expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -348,8 +321,7 @@ router.post('/trial', async (req, res) => {
     });
     
     await license.save();
-    
-    logger.info(`试用授权已激活: ${licenseCode} for ${deviceId}`);
+    console.log('[License] Trial activated:', licenseCode, 'for', deviceId);
     
     res.json({
       success: true,
@@ -362,17 +334,18 @@ router.post('/trial', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('激活试用授权失败:', error);
-    res.status(500).json({ error: '激活失败: ' + error.message });
+    logError('Activate trial failed', error);
+    res.status(500).json({ error: 'Failed to activate trial' });
   }
 });
 
 /**
- * 检查设备授权状态
+ * Check License Status
  * GET /api/license/check/:deviceId
  */
 router.get('/check/:deviceId', async (req, res) => {
   try {
+    const License = getLicenseModel();
     const { deviceId } = req.params;
     
     const license = await License.findOne({ deviceId, isActive: true });
@@ -398,8 +371,8 @@ router.get('/check/:deviceId', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('检查授权状态失败:', error);
-    res.status(500).json({ error: '检查失败' });
+    logError('Check license failed', error);
+    res.status(500).json({ error: 'Check failed' });
   }
 });
 
