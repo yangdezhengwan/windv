@@ -14,7 +14,7 @@
             <img src="/icon.png" class="logo-img" alt="Logo" />
           </div>
           <div class="logo-text">
-            <span class="brand">WindV</span>
+            <span class="brand">小狐狸</span>
             <span class="tagline">AI Live Assistant</span>
           </div>
         </div>

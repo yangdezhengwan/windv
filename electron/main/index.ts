@@ -120,7 +120,7 @@ function showAboutDialog(): void {
     type: 'info',
     title: '关于',
     message: '小狐狸',
-    detail: `版本: 1.0.0\n多平台无人直播AI辅助系统\n\n© 2026 All Rights Reserved`
+    detail: `版本: 1.0.0\n小狐狸 AI 辅助系统\n\n© 2026 All Rights Reserved`
   })
 }
 

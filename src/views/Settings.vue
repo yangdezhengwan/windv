@@ -14,8 +14,8 @@
             <img src="/icon.png" class="logo-img" alt="Logo" />
           </div>
           <div class="logo-text">
-            <span class="brand">WindV</span>
-            <span class="tagline">AI Live Assistant</span>
+            <span class="brand">小狐狸</span>
+            <span class="tagline">AI 直播助手</span>
           </div>
         </div>
         
@@ -67,7 +67,7 @@
           <div class="header-right">
             <el-button type="primary" class="tech-btn-glow" @click="saveSettings">
               <el-icon><Check /></el-icon>
-              Save Changes
+              保存更改
             </el-button>
           </div>
         </el-header>
@@ -86,21 +86,21 @@
                   <div class="setting-item">
                     <div class="setting-info">
                       <div class="setting-label">开机启动</div>
-                      <div class="setting-desc">Launch on system startup</div>
+                      <div class="setting-desc">开机自动启动</div>
                     </div>
                     <el-switch v-model="settings.autoStart" />
                   </div>
                   <div class="setting-item">
                     <div class="setting-info">
                       <div class="setting-label">最小化到托盘</div>
-                      <div class="setting-desc">Keep running in background</div>
+                      <div class="setting-desc">最小化到后台运行</div>
                     </div>
                     <el-switch v-model="settings.minimizeToTray" />
                   </div>
                   <div class="setting-item">
                     <div class="setting-info">
-                      <div class="setting-label">Notification Sound</div>
-                      <div class="setting-desc">Play sound on new orders</div>
+                      <div class="setting-label">新订单提示音</div>
+                      <div class="setting-desc">有新订单时播放声音</div>
                     </div>
                     <el-switch v-model="settings.notificationSound" />
                   </div>
@@ -116,8 +116,8 @@
                 <div class="card-body">
                   <div class="setting-item vertical">
                     <div class="setting-info">
-                      <div class="setting-label">Reply Delay</div>
-                      <div class="setting-desc">Random delay between {{ settings.minDelay }}ms - {{ settings.maxDelay }}ms</div>
+                      <div class="setting-label">回复延迟</div>
+                      <div class="setting-desc">随机延迟 {{ settings.minDelay }}ms - {{ settings.maxDelay }}ms</div>
                     </div>
                     <div class="range-inputs">
                       <el-input-number v-model="settings.minDelay" :min="500" :max="5000" :step="100" size="small" />
@@ -127,15 +127,15 @@
                   </div>
                   <div class="setting-item">
                     <div class="setting-info">
-                      <div class="setting-label">Max Replies/Min</div>
-                      <div class="setting-desc">Limit to avoid rate limiting</div>
+                      <div class="setting-label">每分钟最大回复</div>
+                      <div class="setting-desc">限制避免频率限制</div>
                     </div>
                     <el-input-number v-model="settings.maxPerMinute" :min="5" :max="60" size="small" />
                   </div>
                   <div class="setting-item">
                     <div class="setting-info">
-                      <div class="setting-label">Sensitive Word Filter</div>
-                      <div class="setting-desc">Auto-filter prohibited words</div>
+                      <div class="setting-label">敏感词过滤</div>
+                      <div class="setting-desc">自动过滤违禁词</div>
                     </div>
                     <el-switch v-model="settings.sensitiveFilter" />
                   </div>
@@ -147,26 +147,26 @@
                 <div class="card-glow"></div>
                 <div class="card-header">
                   <div class="header-icon">💰</div>
-                  <div class="header-title">Order Alerts</div>
+                  <div class="header-title">订单提醒</div>
                   <el-tag size="small" type="warning" class="v3-tag">V3</el-tag>
                 </div>
                 <div class="card-body">
                   <div class="setting-item">
                     <div class="setting-info">
-                      <div class="setting-label">Enable Popup Alerts</div>
-                      <div class="setting-desc">Show notification for large orders</div>
+                      <div class="setting-label">启用弹窗提醒</div>
+                      <div class="setting-desc">大额订单时显示通知</div>
                     </div>
                     <el-switch v-model="orderConfig.enablePopup" />
                   </div>
                   <div class="threshold-list">
                     <div class="threshold-item">
-                      <span class="threshold-label">Large Order</span>
+                      <span class="threshold-label">大额订单</span>
                       <el-input-number v-model="orderConfig.largeThreshold" :min="100" :step="100" size="small">
                         <template #suffix>¥</template>
                       </el-input-number>
                     </div>
                     <div class="threshold-item">
-                      <span class="threshold-label">Mega Order</span>
+                      <span class="threshold-label">巨额订单</span>
                       <el-input-number v-model="orderConfig.megaThreshold" :min="500" :step="500" size="small">
                         <template #suffix>¥</template>
                       </el-input-number>
@@ -174,10 +174,46 @@
                   </div>
                   <div class="setting-item">
                     <div class="setting-info">
-                      <div class="setting-label">Repeat Announcement</div>
-                      <div class="setting-desc">Repeat {{ orderConfig.repeatCount }} times for large orders</div>
+                      <div class="setting-label">重复播报</div>
+                      <div class="setting-desc">大额订单重复播报</div>
                     </div>
                     <el-switch v-model="orderConfig.enableRepeat" />
+                  </div>
+                </div>
+              </div>
+              
+              <!-- TTS 语音播报设置 -->
+              <div class="settings-card">
+                <div class="card-header">
+                  <div class="header-icon">🔊</div>
+                  <div class="header-title">语音播报设置</div>
+                </div>
+                <div class="card-body">
+                  <div class="setting-item">
+                    <div class="setting-info">
+                      <div class="setting-label">启用语音播报</div>
+                      <div class="setting-desc">订单和定时消息语音提醒</div>
+                    </div>
+                    <el-switch v-model="ttsConfig.enabled" />
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-info">
+                      <div class="setting-label">语速</div>
+                      <div class="setting-desc">-10 到 10（默认 0）</div>
+                    </div>
+                    <el-slider v-model="ttsConfig.rate" :min="-10" :max="10" style="width: 120px;" />
+                  </div>
+                  <div class="setting-item">
+                    <div class="setting-info">
+                      <div class="setting-label">音量</div>
+                      <div class="setting-desc">0% 到 100%</div>
+                    </div>
+                    <el-slider v-model="ttsConfig.volume" :min="0" :max="100" style="width: 120px;" />
+                  </div>
+                  <div class="setting-item">
+                    <el-button type="primary" @click="testTTS" :disabled="!ttsConfig.enabled">
+                      🔊 测试播报
+                    </el-button>
                   </div>
                 </div>
               </div>
@@ -189,14 +225,14 @@
               <div class="settings-card">
                 <div class="card-header">
                   <div class="header-icon">⌨️</div>
-                  <div class="header-title">Keyboard Shortcuts</div>
+                  <div class="header-title">快捷键设置</div>
                 </div>
                 <div class="card-body">
                   <div class="shortcut-list">
                     <div class="shortcut-item">
                       <div class="shortcut-info">
-                        <div class="shortcut-name">Toggle Monitor</div>
-                        <div class="shortcut-desc">Start/Stop all rooms</div>
+                        <div class="shortcut-name">切换监控</div>
+                        <div class="shortcut-desc">启动/停止所有房间</div>
                       </div>
                       <div class="shortcut-key">
                         <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>
@@ -204,8 +240,8 @@
                     </div>
                     <div class="shortcut-item">
                       <div class="shortcut-info">
-                        <div class="shortcut-name">Emergency Stop</div>
-                        <div class="shortcut-desc">Stop all immediately</div>
+                        <div class="shortcut-name">紧急停止</div>
+                        <div class="shortcut-desc">立即停止所有</div>
                       </div>
                       <div class="shortcut-key danger">
                         <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd>
@@ -213,8 +249,8 @@
                     </div>
                     <div class="shortcut-item">
                       <div class="shortcut-info">
-                        <div class="shortcut-name">Clear Logs</div>
-                        <div class="shortcut-desc">Clear all danmaku logs</div>
+                        <div class="shortcut-name">清空日志</div>
+                        <div class="shortcut-desc">清空所有弹幕日志</div>
                       </div>
                       <div class="shortcut-key">
                         <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd>
@@ -251,7 +287,7 @@
                     </el-button>
                     <el-button class="data-btn" @click="downloadTemplate">
                       <el-icon><Document /></el-icon>
-                      Download Template
+                      下载模板
                     </el-button>
                     <el-button class="data-btn" @click="createBackup">
                       <el-icon><FolderChecked /></el-icon>
@@ -269,7 +305,7 @@
               <div class="settings-card about">
                 <div class="about-content">
                   <img src="/icon.png" class="about-logo" />
-                  <h3 class="about-name">WindV AI Assistant</h3>
+                  <h3 class="about-name">小狐狸 AI Assistant</h3>
                   <p class="about-version">Version {{ version }}</p>
                   <p class="about-desc">Professional multi-platform live streaming AI assistant</p>
                   <div class="about-links">
@@ -327,6 +363,13 @@ const orderConfig = reactive<OrderConfig>({
   repeatCount: 3
 })
 
+// TTS 配置
+const ttsConfig = reactive({
+  enabled: false,
+  rate: 0,
+  volume: 100
+})
+
 const version = ref('1.0.0')
 
 async function loadSettings() {
@@ -347,6 +390,16 @@ async function loadSettings() {
       const parsed = JSON.parse(savedOrderConfig)
       Object.assign(orderConfig, parsed)
     }
+    
+    // Load TTS config
+    ttsConfig.enabled = allSettings.ttsEnabled === 'true'
+    ttsConfig.rate = parseInt(allSettings.ttsRate) || 0
+    ttsConfig.volume = parseInt(allSettings.ttsVolume) || 100
+    
+    // 初始化 TTS
+    await window.windv.tts.setEnabled(ttsConfig.enabled)
+    await window.windv.tts.setRate(ttsConfig.rate)
+    await window.windv.tts.setVolume(ttsConfig.volume)
   } catch (error) {
     console.error('Failed to load settings:', error)
   }
@@ -362,8 +415,16 @@ async function saveSettings() {
       window.windv.settings.set('maxDelay', String(settings.maxDelay)),
       window.windv.settings.set('maxPerMinute', String(settings.maxPerMinute)),
       window.windv.settings.set('sensitiveFilter', String(settings.sensitiveFilter)),
-      window.windv.settings.set('orderConfig', JSON.stringify(orderConfig))
+      window.windv.settings.set('orderConfig', JSON.stringify(orderConfig)),
+      window.windv.settings.set('ttsEnabled', String(ttsConfig.enabled)),
+      window.windv.settings.set('ttsRate', String(ttsConfig.rate)),
+      window.windv.settings.set('ttsVolume', String(ttsConfig.volume))
     ]
+    
+    // 更新 TTS 设置到主进程
+    await window.windv.tts.setEnabled(ttsConfig.enabled)
+    await window.windv.tts.setRate(ttsConfig.rate)
+    await window.windv.tts.setVolume(ttsConfig.volume)
     
     await Promise.all(promises)
     ElMessage.success('设置已保存')
@@ -372,11 +433,20 @@ async function saveSettings() {
   }
 }
 
+async function testTTS() {
+  try {
+    await window.windv.tts.speak('欢迎使用小狐狸 AI 助手，语音播报功能测试成功！')
+    ElMessage.success('语音播报测试完成')
+  } catch (error) {
+    ElMessage.error('语音播报失败')
+  }
+}
+
 async function exportScripts() {
   try {
     const result = await window.windv.excel.exportScripts()
     if (result.success) {
-      ElMessage.success(`Exported to ${result.filePath}`)
+      ElMessage.success(`已导出到 ${result.filePath}`)
     }
   } catch (error) {
     ElMessage.error('导出失败')

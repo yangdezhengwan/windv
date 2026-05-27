@@ -26,7 +26,7 @@ export class TrayManager {
       const icon = this.createTrayIcon()
       this.tray = new Tray(icon)
 
-      this.tray.setToolTip('无人直播助手 - 运行中')
+      this.tray.setToolTip('小狐狸 - 运行中')
       this.updateContextMenu()
 
       // 点击托盘图标，显示/隐藏主窗口

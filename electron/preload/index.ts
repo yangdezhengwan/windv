@@ -153,6 +153,15 @@ export interface WindVAPI {
     getDeviceId: () => Promise<string | null>
   }
   
+  // TTS 语音播报
+  tts: {
+    speak: (text: string) => Promise<{ success: boolean; error?: string }>
+    setEnabled: (enabled: boolean) => Promise<{ success: boolean }>
+    setRate: (rate: number) => Promise<{ success: boolean }>
+    setVolume: (volume: number) => Promise<{ success: boolean }>
+    getVoices: () => Promise<{ success: boolean; voices: string[] }>
+  }
+  
   // Event listeners
   on: (channel: string, callback: (...args: any[]) => void) => void
   off: (channel: string, callback: (...args: any[]) => void) => void
@@ -311,6 +320,15 @@ const windvAPI: WindVAPI = {
     getCurrent: () => ipcRenderer.invoke('license:get-current'),
     clear: () => ipcRenderer.invoke('license:clear'),
     getDeviceId: () => ipcRenderer.invoke('license:get-device-id'),
+  },
+  
+  // TTS 语音播报
+  tts: {
+    speak: (text: string) => ipcRenderer.invoke('tts:speak', { text }),
+    setEnabled: (enabled: boolean) => ipcRenderer.invoke('tts:set-enabled', { enabled }),
+    setRate: (rate: number) => ipcRenderer.invoke('tts:set-rate', { rate }),
+    setVolume: (volume: number) => ipcRenderer.invoke('tts:set-volume', { volume }),
+    getVoices: () => ipcRenderer.invoke('tts:get-voices'),
   },
   
   on: (channel, callback) => {

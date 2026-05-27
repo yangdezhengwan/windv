@@ -343,7 +343,7 @@ export class AdvancedStatsCollector {
       const worksheet = workbook.addWorksheet('数据报表')
       
       // 添加标题
-      worksheet.addRow(['多平台无人直播助手 - 数据分析报告'])
+      worksheet.addRow(['小狐狸 - 数据分析报告'])
       worksheet.addRow([''])
       worksheet.addRow(['生成时间:', new Date().toLocaleString('zh-CN')])
       worksheet.addRow([''])

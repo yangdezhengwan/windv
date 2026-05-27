@@ -10,6 +10,7 @@ import { BackupManager } from '../modules/BackupManager'
 import { ExcelManager } from '../modules/ExcelManager'
 import { ShortcutManager } from '../modules/ShortcutManager'
 import { OrderConfigManager } from '../modules/OrderConfigManager'
+import { TTSManager } from '../modules/TTSManager'
 import { HighFrequencyDetector } from '../modules/HighFrequencyDetector'
 import { LLMConfigManager } from '../modules/LLMConfigManager'
 import { LoopMessageManager } from '../modules/LoopMessageManager'
@@ -1037,3 +1038,41 @@ export function setupIpcHandlers(platformManager: PlatformManager): void {
 
   log.info('IPC handlers registered successfully')
 }
+
+// ===== TTS 语音播报 =====
+const ttsManager = TTSManager.getInstance()
+
+ipcMain.handle('tts:speak', async (_, { text }) => {
+  try {
+    await ttsManager.speak(text)
+    return { success: true }
+  } catch (error: any) {
+    log.error('tts:speak error:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+ipcMain.handle('tts:set-enabled', async (_, { enabled }) => {
+  ttsManager.setEnabled(enabled)
+  return { success: true }
+})
+
+ipcMain.handle('tts:set-rate', async (_, { rate }) => {
+  ttsManager.setRate(rate)
+  return { success: true }
+})
+
+ipcMain.handle('tts:set-volume', async (_, { volume }) => {
+  ttsManager.setVolume(volume)
+  return { success: true }
+})
+
+ipcMain.handle('tts:get-voices', async () => {
+  try {
+    const voices = await ttsManager.getVoices()
+    return { success: true, voices }
+  } catch (error: any) {
+    log.error('tts:get-voices error:', error)
+    return { success: false, voices: [], error: error.message }
+  }
+})
