@@ -134,6 +134,25 @@ export interface WindVAPI {
     reset: () => Promise<any>
   }
   
+  // 云端同步
+  cloud: {
+    login: (username: string, password: string, apiUrl?: string) => Promise<any>
+    sync: () => Promise<{ success: boolean; message: string }>
+    getSyncStatus: () => Promise<{ lastSyncTime: string | null; syncEnabled: boolean; isSyncing: boolean; pendingChanges: number; lastError: string | null }>
+    setSyncEnabled: (enabled: boolean) => Promise<any>
+    restore: () => Promise<{ success: boolean; message: string }>
+  }
+  
+  // 授权管理
+  license: {
+    verify: (licenseCode: string) => Promise<{ valid: boolean; license?: any; error?: string; daysLeft?: number; isExpired?: boolean }>
+    activateTrial: () => Promise<{ valid: boolean; license?: any; error?: string; daysLeft?: number; isExpired?: boolean }>
+    check: () => Promise<{ valid: boolean; license?: any; error?: string; daysLeft?: number; isExpired?: boolean }>
+    getCurrent: () => Promise<any>
+    clear: () => Promise<any>
+    getDeviceId: () => Promise<string | null>
+  }
+  
   // Event listeners
   on: (channel: string, callback: (...args: any[]) => void) => void
   off: (channel: string, callback: (...args: any[]) => void) => void
@@ -273,6 +292,25 @@ const windvAPI: WindVAPI = {
     export: () => ipcRenderer.invoke('loop:export'),
     import: (json) => ipcRenderer.invoke('loop:import', { json }),
     reset: () => ipcRenderer.invoke('loop:reset')
+  },
+  
+  // 云端同步
+  cloud: {
+    login: (username: string, password: string, apiUrl?: string) => ipcRenderer.invoke('cloud:login', { username, password, apiUrl }),
+    sync: () => ipcRenderer.invoke('cloud:sync'),
+    getSyncStatus: () => ipcRenderer.invoke('cloud:sync-status'),
+    setSyncEnabled: (enabled: boolean) => ipcRenderer.invoke('cloud:set-sync-enabled', { enabled }),
+    restore: () => ipcRenderer.invoke('cloud:restore'),
+  },
+  
+  // 授权管理
+  license: {
+    verify: (licenseCode: string) => ipcRenderer.invoke('license:verify', { licenseCode }),
+    activateTrial: () => ipcRenderer.invoke('license:activate-trial'),
+    check: () => ipcRenderer.invoke('license:check'),
+    getCurrent: () => ipcRenderer.invoke('license:get-current'),
+    clear: () => ipcRenderer.invoke('license:clear'),
+    getDeviceId: () => ipcRenderer.invoke('license:get-device-id'),
   },
   
   on: (channel, callback) => {

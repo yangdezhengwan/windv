@@ -916,5 +916,124 @@ export function setupIpcHandlers(platformManager: PlatformManager): void {
     }
   })
 
+  // ===== 云端同步 =====
+  ipcMain.handle('cloud:login', async (_, { username, password, apiUrl }) => {
+    try {
+      const { cloudAPI } = await import('../utils/cloudAPI')
+      if (apiUrl) cloudAPI.setApiUrl(apiUrl)
+      const result = await cloudAPI.login(username, password)
+      return result
+    } catch (error: any) {
+      log.error('cloud:login error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('cloud:sync', async () => {
+    try {
+      const { cloudSyncManager } = await import('../utils/cloudSync')
+      return await cloudSyncManager.sync()
+    } catch (error: any) {
+      log.error('cloud:sync error:', error)
+      return { success: false, message: error.message }
+    }
+  })
+
+  ipcMain.handle('cloud:sync-status', async () => {
+    try {
+      const { cloudSyncManager } = await import('../utils/cloudSync')
+      return cloudSyncManager.getStatus()
+    } catch (error: any) {
+      log.error('cloud:sync-status error:', error)
+      return { syncEnabled: false, isSyncing: false, lastSyncTime: null, pendingChanges: 0, lastError: error.message }
+    }
+  })
+
+  ipcMain.handle('cloud:set-sync-enabled', async (_, { enabled }) => {
+    try {
+      const { cloudSyncManager } = await import('../utils/cloudSync')
+      await cloudSyncManager.setSyncEnabled(enabled)
+      return { success: true }
+    } catch (error: any) {
+      log.error('cloud:set-sync-enabled error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('cloud:restore', async () => {
+    try {
+      const { cloudSyncManager } = await import('../utils/cloudSync')
+      return await cloudSyncManager.restoreFromCloud()
+    } catch (error: any) {
+      log.error('cloud:restore error:', error)
+      return { success: false, message: error.message }
+    }
+  })
+
+  // ===== 授权管理 =====
+  ipcMain.handle('license:verify', async (_, { licenseCode }) => {
+    try {
+      const { licenseManager } = await import('../utils/licenseManager')
+      const result = await licenseManager.verifyLicense(licenseCode)
+      return result
+    } catch (error: any) {
+      log.error('license:verify error:', error)
+      return { valid: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('license:activate-trial', async () => {
+    try {
+      const { licenseManager } = await import('../utils/licenseManager')
+      const result = await licenseManager.activateTrial()
+      return result
+    } catch (error: any) {
+      log.error('license:activate-trial error:', error)
+      return { valid: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('license:check', async () => {
+    try {
+      const { licenseManager } = await import('../utils/licenseManager')
+      const result = await licenseManager.checkLicenseStatus()
+      return result
+    } catch (error: any) {
+      log.error('license:check error:', error)
+      return { valid: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle('license:get-current', async () => {
+    try {
+      const { licenseManager } = await import('../utils/licenseManager')
+      return licenseManager.getCurrentLicense()
+    } catch (error: any) {
+      log.error('license:get-current error:', error)
+      return null
+    }
+  })
+
+  ipcMain.handle('license:clear', async () => {
+    try {
+      const { licenseManager } = await import('../utils/licenseManager')
+      await licenseManager.clearLicense()
+      return { success: true }
+    } catch (error: any) {
+      log.error('license:clear error:', error)
+      throw error
+    }
+  })
+
+  ipcMain.handle('license:get-device-id', async () => {
+    try {
+      const { licenseManager } = await import('../utils/licenseManager')
+      return licenseManager.getDeviceId()
+    } catch (error: any) {
+      log.error('license:get-device-id error:', error)
+      return null
+    }
+  })
+
   log.info('IPC handlers registered successfully')
 }
