@@ -59,7 +59,7 @@
   },
   "build": {
     "appId": "com.windv.liveassistant",
-    "productName": "小狐狸",
+    "productName": "WindV",
     "directories": {
       "output": "release"
     },
@@ -76,7 +76,8 @@
           ]
         }
       ],
-      "icon": "resources/icon.ico"
+      "icon": "resources/icon.ico",
+      "artifactName": "WindV-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -84,7 +85,8 @@
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "artifactName": "WindV-Setup-${version}.${ext}"
     }
   }
 }

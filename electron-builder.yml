@@ -1,5 +1,5 @@
 appId: com.windv.liveassistant
-productName: 无人直播助手
+productName: WindV
 copyright: Copyright © 2026
 
 directories:
@@ -24,7 +24,6 @@ win:
       arch:
         - x64
   icon: resources/icon.ico
-  artifactName: "${productName}-${version}-Setup.${ext}"
 
 nsis:
   oneClick: false
@@ -32,13 +31,14 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: 无人直播助手
+  shortcutName: WindV
   installerIcon: resources/icon.ico
   uninstallerIcon: resources/icon.ico
   installerHeaderIcon: resources/icon.ico
   license: ""
   welcomeImage: ""
   installerColumns: 80
+  artifactName: "WindV-Setup-${version}.${ext}"
 
 publish: null
 
