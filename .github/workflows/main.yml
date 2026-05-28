@@ -43,6 +43,6 @@ jobs:
       with:
         name: WindV-Windows
         path: |
-          dist/*.exe
-          dist/win-unpacked/*.exe
+          release/*.exe
+          release/win-unpacked/*.exe
         if-no-files-found: warn
