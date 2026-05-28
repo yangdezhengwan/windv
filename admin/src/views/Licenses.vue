@@ -673,13 +673,17 @@ const submitType = async () => {
     typeSubmitting.value = true
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+      const token = localStorage.getItem('token') || ''
       const isEdit = !!editingType.value._id
       const url = isEdit ? `${API_BASE}/license-type/${editingType.value._id}` : `${API_BASE}/license-type`
       const method = isEdit ? 'PUT' : 'POST'
       
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
         body: JSON.stringify(typeForm.value)
       })
       
@@ -709,8 +713,12 @@ const deleteType = (type) => {
   }).then(async () => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+      const token = localStorage.getItem('token') || ''
       const res = await fetch(`${API_BASE}/license-type/${type._id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
       })
       
       if (res.ok) {

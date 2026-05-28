@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "无人直播助手云端服务",
   "main": "src/server.js",
-  "type": "module",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",

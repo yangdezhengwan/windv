@@ -79,4 +79,4 @@ licenseTypeSchema.statics.initDefaults = async function() {
   console.log('[LicenseType] Default types initialized');
 };
 
-module.exports = mongoose.model('LicenseType', licenseTypeSchema);
+module.exports = mongoose.models.LicenseType || mongoose.model('LicenseType', licenseTypeSchema);
