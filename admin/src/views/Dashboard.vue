@@ -116,7 +116,7 @@
       </div>
 
       <!-- 授权类型分布 -->
-      <div class="chart-card small animate-fade-in-up" style="animation-delay: 0.5s">
+      <div class="chart-card large animate-fade-in-up" style="animation-delay: 0.5s">
         <div class="card-header">
           <div class="header-title">
             <h3>授权类型分布</h3>
@@ -649,15 +649,14 @@ onMounted(() => {
 .chart-bars {
   display: flex;
   align-items: flex-end;
-  justify-content: space-around;
+  justify-content: space-between;
   height: 200px;
-  gap: 24px;
-  padding: 0 20px;
+  padding: 0 10px;
 }
 
 .bar {
   flex: 1;
-  max-width: 60px;
+  min-width: 30px;
   background: linear-gradient(180deg, #00d4ff, #7c3aed);
   border-radius: 8px 8px 0 0;
   position: relative;
@@ -666,6 +665,7 @@ onMounted(() => {
   animation: growUp 0.6s ease-out forwards;
   animation-delay: var(--delay);
   opacity: 0;
+  margin: 0 8px;
 }
 
 @keyframes growUp {

@@ -30,6 +30,7 @@ const statsRoutes = require('./routes/stats');
 const userRoutes = require('./routes/users');
 const settingsRoutes = require('./routes/settings');
 const licenseRoutes = require('./routes/license');
+const licenseTypeRoutes = require('./routes/licenseType');
 
 // 中间件
 const { authenticate } = require('./middleware/auth');
@@ -98,6 +99,7 @@ app.use('/api/stats', authenticate, statsRoutes);
 app.use('/api/users', authenticate, userRoutes);
 app.use('/api/settings', authenticate, settingsRoutes);
 app.use('/api/license', licenseRoutes);
+app.use('/api/license-type', licenseTypeRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {

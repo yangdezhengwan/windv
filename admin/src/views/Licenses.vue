@@ -22,6 +22,13 @@
           </svg>
           批量导入
         </el-button>
+        <el-button @click="openTypeManager">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          管理类型
+        </el-button>
       </div>
     </div>
 
@@ -58,9 +65,7 @@
       <div class="filter-right">
         <el-select v-model="filterType" placeholder="授权类型" clearable @change="handleFilter">
           <el-option label="全部" value=""/>
-          <el-option label="管理员" value="admin"/>
-          <el-option label="标准版" value="standard"/>
-          <el-option label="试用版" value="trial"/>
+          <el-option v-for="t in licenseTypes" :key="t.code" :label="t.name" :value="t.code"/>
         </el-select>
         <el-select v-model="filterStatus" placeholder="授权状态" clearable @change="handleFilter">
           <el-option label="全部" value=""/>
@@ -142,9 +147,7 @@
       <el-form :model="generateForm" :rules="generateRules" ref="generateFormRef" label-width="100px">
         <el-form-item label="授权类型" prop="type">
           <el-select v-model="generateForm.type" placeholder="请选择授权类型">
-            <el-option label="管理员" value="admin" />
-            <el-option label="标准版" value="standard" />
-            <el-option label="试用版" value="trial" />
+            <el-option v-for="t in licenseTypes" :key="t.code" :label="t.name" :value="t.code"/>
           </el-select>
         </el-form-item>
         <el-form-item label="用户邮箱" prop="email">
@@ -177,6 +180,103 @@
         <el-button type="primary" @click="submitGenerate" :loading="generating">生成授权</el-button>
       </template>
     </el-dialog>
+
+    <!-- 授权类型管理对话框 -->
+    <el-dialog
+      v-model="typeManagerVisible"
+      title="授权类型管理"
+      width="800px"
+    >
+      <div class="type-manager">
+        <div class="type-header">
+          <el-button type="primary" @click="openTypeDialog()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            添加类型
+          </el-button>
+        </div>
+        <el-table :data="licenseTypes" v-loading="typeLoading" stripe :cell-style="{ color: '#ffffff', background: 'rgba(30, 30, 60, 0.4)' }" :header-cell-style="{ color: '#ffffff', background: 'rgba(0, 212, 255, 0.1)' }">
+          <el-table-column prop="code" label="标识" width="150">
+            <template #default="{ row }">
+              <code style="color: #90cdf4;">{{ row.code }}</code>
+            </template>
+          </el-table-column>
+          <el-table-column prop="name" label="名称" width="120" />
+          <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="defaultExpiryDays" label="默认有效期" width="100" align="center">
+            <template #default="{ row }">
+              {{ row.defaultExpiryDays }}天
+            </template>
+          </el-table-column>
+          <el-table-column prop="isActive" label="状态" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.isActive ? 'success' : 'info'" size="small">
+                {{ row.isActive ? '启用' : '禁用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="isSystem" label="系统" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.isSystem" type="warning" size="small">内置</el-tag>
+              <span v-else style="color: rgba(255,255,255,0.3);">-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" link @click="openTypeDialog(row)">编辑</el-button>
+              <el-button type="danger" link @click="deleteType(row)" v-if="!row.isSystem">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
+
+    <!-- 类型编辑对话框 -->
+    <el-dialog
+      v-model="typeDialogVisible"
+      :title="editingType._id ? '编辑授权类型' : '添加授权类型'"
+      width="500px"
+      @close="resetTypeForm"
+    >
+      <el-form :model="typeForm" :rules="typeRules" ref="typeFormRef" label-width="100px">
+        <el-form-item label="类型标识" prop="code" v-if="!editingType._id || !editingType.isSystem">
+          <el-input v-model="typeForm.code" placeholder="如: vip, enterprise" :disabled="!!editingType.isSystem" />
+          <div class="form-tip">唯一标识，小写字母、数字、连字符</div>
+        </el-form-item>
+        <el-form-item label="显示名称" prop="name">
+          <el-input v-model="typeForm.name" placeholder="如: VIP会员" />
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input v-model="typeForm.description" type="textarea" :rows="2" placeholder="类型描述" />
+        </el-form-item>
+        <el-form-item label="默认有效期" prop="defaultExpiryDays">
+          <el-input-number v-model="typeForm.defaultExpiryDays" :min="1" :max="3650" />
+          <span style="margin-left: 8px; color: rgba(255,255,255,0.5);">天</span>
+        </el-form-item>
+        <el-form-item label="功能权限" prop="features">
+          <el-checkbox-group v-model="typeForm.features">
+            <el-checkbox label="basic">基础功能</el-checkbox>
+            <el-checkbox label="sync">云端同步</el-checkbox>
+            <el-checkbox label="stats">数据统计</el-checkbox>
+            <el-checkbox label="cloud_backup">云端备份</el-checkbox>
+            <el-checkbox label="ai_llm">AI 大模型</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+        <el-form-item label="排序" prop="sortOrder">
+          <el-input-number v-model="typeForm.sortOrder" :min="0" :max="999" />
+          <div class="form-tip">数字越小排序越靠前</div>
+        </el-form-item>
+        <el-form-item label="启用状态">
+          <el-switch v-model="typeForm.isActive" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="typeDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitType" :loading="typeSubmitting">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -195,6 +295,36 @@ const total = ref(0)
 const generateDialogVisible = ref(false)
 const generating = ref(false)
 const generateFormRef = ref(null)
+
+// 授权类型管理
+const typeManagerVisible = ref(false)
+const typeDialogVisible = ref(false)
+const typeLoading = ref(false)
+const typeSubmitting = ref(false)
+const typeFormRef = ref(null)
+const licenseTypes = ref([])
+const editingType = ref({})
+const typeForm = ref({
+  code: '',
+  name: '',
+  description: '',
+  defaultExpiryDays: 365,
+  features: ['basic'],
+  sortOrder: 10,
+  isActive: true
+})
+const typeRules = {
+  code: [
+    { required: true, message: '请输入类型标识', trigger: 'blur' },
+    { pattern: /^[a-z0-9-]+$/, message: '只能包含小写字母、数字和连字符', trigger: 'blur' }
+  ],
+  name: [
+    { required: true, message: '请输入显示名称', trigger: 'blur' }
+  ],
+  defaultExpiryDays: [
+    { required: true, message: '请输入默认有效期', trigger: 'change' }
+  ]
+}
 
 const licenses = ref([
   {
@@ -317,22 +447,24 @@ const filteredLicenses = computed(() => {
   return result
 })
 
-const getTypeLabel = (type) => {
+const getTypeLabel = (typeCode) => {
+  const found = licenseTypes.value.find(t => t.code === typeCode)
+  if (found) return found.name
   const labels = {
     admin: '管理员',
     standard: '标准版',
     trial: '试用版'
   }
-  return labels[type] || type
+  return labels[typeCode] || typeCode
 }
 
-const getTypeTag = (type) => {
-  const tags = {
+const getTypeTag = (typeCode) => {
+  const tagMap = {
     admin: 'danger',
     standard: 'primary',
     trial: 'warning'
   }
-  return tags[type] || ''
+  return tagMap[typeCode] || ''
 }
 
 const getStatusLabel = (status) => {
@@ -473,8 +605,141 @@ const generateRandomString = () => {
   return result
 }
 
-onMounted(() => {
+// 授权类型管理
+const openTypeManager = async () => {
+  typeManagerVisible.value = true
+  await fetchTypes()
+}
+
+const fetchTypes = async () => {
+  typeLoading.value = true
+  try {
+    // 模拟获取数据，实际应从API获取
+    const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+    const res = await fetch(`${API_BASE}/license-type/list`)
+    if (res.ok) {
+      const data = await res.json()
+      licenseTypes.value = data.types || []
+    } else {
+      // 如果API未实现，使用默认类型
+      licenseTypes.value = [
+        { _id: '1', code: 'admin', name: '管理员', description: '管理员权限，无限制', defaultExpiryDays: 3650, features: ['all'], isActive: true, isSystem: true, sortOrder: 1 },
+        { _id: '2', code: 'standard', name: '标准版', description: '标准功能授权', defaultExpiryDays: 365, features: ['basic', 'advanced'], isActive: true, isSystem: true, sortOrder: 2 },
+        { _id: '3', code: 'trial', name: '试用版', description: '试用授权，限制功能', defaultExpiryDays: 7, features: ['basic'], isActive: true, isSystem: true, sortOrder: 3 }
+      ]
+    }
+  } catch (e) {
+    console.error('获取授权类型失败:', e)
+    ElMessage.error('获取授权类型失败')
+  }
+  typeLoading.value = false
+}
+
+const openTypeDialog = (type = null) => {
+  editingType.value = type || {}
+  if (type) {
+    typeForm.value = {
+      code: type.code,
+      name: type.name,
+      description: type.description || '',
+      defaultExpiryDays: type.defaultExpiryDays || 365,
+      features: type.features || ['basic'],
+      sortOrder: type.sortOrder || 10,
+      isActive: type.isActive !== false
+    }
+  } else {
+    resetTypeForm()
+  }
+  typeDialogVisible.value = true
+}
+
+const resetTypeForm = () => {
+  typeForm.value = {
+    code: '',
+    name: '',
+    description: '',
+    defaultExpiryDays: 365,
+    features: ['basic'],
+    sortOrder: 10,
+    isActive: true
+  }
+  typeFormRef.value?.resetFields()
+}
+
+const submitType = async () => {
+  typeFormRef.value.validate(async (valid) => {
+    if (!valid) return
+    
+    typeSubmitting.value = true
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+      const isEdit = !!editingType.value._id
+      const url = isEdit ? `${API_BASE}/license-type/${editingType.value._id}` : `${API_BASE}/license-type`
+      const method = isEdit ? 'PUT' : 'POST'
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(typeForm.value)
+      })
+      
+      if (res.ok) {
+        ElMessage.success(isEdit ? '类型已更新' : '类型已添加')
+        typeDialogVisible.value = false
+        await fetchTypes()
+        // 刷新筛选下拉
+        await refreshTypeOptions()
+      } else {
+        const err = await res.json()
+        ElMessage.error(err.error || '操作失败')
+      }
+    } catch (e) {
+      console.error('保存授权类型失败:', e)
+      ElMessage.error('保存失败')
+    }
+    typeSubmitting.value = false
+  })
+}
+
+const deleteType = (type) => {
+  ElMessageBox.confirm(`确定要删除授权类型"${type.name}"吗？`, '确认删除', {
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+      const res = await fetch(`${API_BASE}/license-type/${type._id}`, {
+        method: 'DELETE'
+      })
+      
+      if (res.ok) {
+        ElMessage.success('类型已删除')
+        await fetchTypes()
+        await refreshTypeOptions()
+      } else {
+        const err = await res.json()
+        ElMessage.error(err.error || '删除失败')
+      }
+    } catch (e) {
+      ElMessage.error('删除失败')
+    }
+  }).catch(() => {})
+}
+
+// 刷新筛选栏的类型下拉
+const refreshTypeOptions = async () => {
+  await fetchTypes()
+  // 更新 getTypeLabel 函数的数据源
+  if (licenseTypes.value.length > 0) {
+    window.__licenseTypes = licenseTypes.value
+  }
+}
+
+onMounted(async () => {
   total.value = licenses.value.length
+  // 加载授权类型
+  await fetchTypes()
 })
 </script>
 
@@ -787,5 +1052,59 @@ onMounted(() => {
     flex: 1;
     min-width: 200px;
   }
+}
+
+/* 操作栏按钮 - 暗淡半透明样式 */
+.el-table :deep(.el-button--primary) {
+  background: rgba(64, 158, 255, 0.15);
+  border-color: rgba(64, 158, 255, 0.3);
+  color: #ffffff;
+}
+
+.el-table :deep(.el-button--primary:hover) {
+  background: rgba(64, 158, 255, 0.25);
+  border-color: rgba(64, 158, 255, 0.5);
+  color: #ffffff;
+}
+
+.el-table :deep(.el-button--danger) {
+  background: rgba(245, 101, 101, 0.15);
+  border-color: rgba(245, 101, 101, 0.3);
+  color: #ffffff;
+}
+
+.el-table :deep(.el-button--danger:hover) {
+  background: rgba(245, 101, 101, 0.25);
+  border-color: rgba(245, 101, 101, 0.5);
+  color: #ffffff;
+}
+
+/* 授权类型管理 */
+.type-manager {
+  min-height: 300px;
+}
+
+.type-header {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.type-header :deep(.el-button) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.type-header :deep(svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 4px;
+  line-height: 1.4;
 }
 </style>

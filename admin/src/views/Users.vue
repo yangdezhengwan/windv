@@ -728,4 +728,29 @@ onMounted(() => {
     min-width: 200px;
   }
 }
+
+/* 操作栏按钮 - 暗淡半透明样式 */
+.el-table :deep(.el-button--primary) {
+  background: rgba(64, 158, 255, 0.15);
+  border-color: rgba(64, 158, 255, 0.3);
+  color: #ffffff;
+}
+
+.el-table :deep(.el-button--primary:hover) {
+  background: rgba(64, 158, 255, 0.25);
+  border-color: rgba(64, 158, 255, 0.5);
+  color: #ffffff;
+}
+
+.el-table :deep(.el-button--danger) {
+  background: rgba(245, 101, 101, 0.15);
+  border-color: rgba(245, 101, 101, 0.3);
+  color: #ffffff;
+}
+
+.el-table :deep(.el-button--danger:hover) {
+  background: rgba(245, 101, 101, 0.25);
+  border-color: rgba(245, 101, 101, 0.5);
+  color: #ffffff;
+}
 </style>
