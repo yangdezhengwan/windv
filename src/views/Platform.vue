@@ -52,6 +52,10 @@
             <el-icon class="menu-icon"><Setting /></el-icon>
             <span>系统设置</span>
           </el-menu-item>
+          <el-menu-item index="/license" class="menu-item">
+            <el-icon class="menu-icon"><Key /></el-icon>
+            <span>授权激活</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
 
@@ -345,7 +349,9 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup
+import { Key } from '@element-plus/icons-vue'
+ lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -603,7 +609,7 @@ onMounted(() => {
   min-height: 100vh;
   background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0f0f2a 100%);
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 // Background Animation

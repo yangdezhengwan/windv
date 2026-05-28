@@ -37,9 +37,12 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
+  background: #0a0a1a;
 }
 
 #app {
   height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 </style>

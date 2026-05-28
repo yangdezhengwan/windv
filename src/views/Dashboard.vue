@@ -51,6 +51,10 @@
             <el-icon class="menu-icon"><Setting /></el-icon>
             <span>系统设置</span>
           </el-menu-item>
+          <el-menu-item index="/license" class="menu-item">
+            <el-icon class="menu-icon"><Key /></el-icon>
+            <span>授权激活</span>
+          </el-menu-item>
         </el-menu>
         
         <!-- System Status -->
@@ -372,10 +376,10 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .dashboard {
+  overflow-y: auto;
   min-height: 100vh;
   background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0f0f2a 100%);
   position: relative;
-  overflow: hidden;
 }
 
 // Animated Background

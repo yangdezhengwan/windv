@@ -52,6 +52,10 @@
             <el-icon class="menu-icon"><Setting /></el-icon>
             <span>系统设置</span>
           </el-menu-item>
+          <el-menu-item index="/license" class="menu-item">
+            <el-icon class="menu-icon"><Key /></el-icon>
+            <span>授权激活</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
 
@@ -384,7 +388,9 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup
+import { Key } from '@element-plus/icons-vue'
+ lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 
@@ -531,10 +537,10 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .risk-page {
-  height: 100vh;
+  min-height: 100vh;
   background-color: #0a0a14;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .bg-animation {
